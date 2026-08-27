@@ -3,6 +3,8 @@ import { computed, reactive, ref } from 'vue'
 import workshop from '../data/workshop.json'
 
 const selectedDate = ref('2026-08-22')
+const days = Array.from({ length: 31 }, (_, index) => index + 1)
+const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 const bookingForm = reactive({
   name: '',
@@ -11,81 +13,63 @@ const bookingForm = reactive({
   agreedToTerms: false,
 })
 
-const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-
-// August 2026 starts on Saturday.
-// Since the calendar starts on Monday, five empty cells are required.
-const leadingBlankDays = 5
-const daysInAugust = 31
-
-const calendarDays = Array.from({ length: daysInAugust }, (_, index) => {
-  const day = index + 1
-
-  return {
-    day,
-    date: `2026-08-${String(day).padStart(2, '0')}`,
-  }
-})
-
-const availableDates = computed(() => {
-  return new Set(workshop.sessions.map((session) => session.date))
-})
-
 const selectedSession = computed(() => {
-  return workshop.sessions.find((session) => session.date === selectedDate.value) ?? null
+  return workshop.sessions.find((session) => session.date === selectedDate.value)
 })
 
-function selectDate(date) {
-  selectedDate.value = date
+function dateFor(day) {
+  return `2026-08-${String(day).padStart(2, '0')}`
 }
 
-function isAvailable(date) {
-  return availableDates.value.has(date)
+function hasWorkshop(day) {
+  return workshop.sessions.some((session) => session.date === dateFor(day))
+}
+
+function selectDay(day) {
+  selectedDate.value = dateFor(day)
+}
+
+function submitBooking() {
+  alert(`Booking confirmed for ${selectedSession.value.displayDate}.`)
 }
 </script>
 
 <template>
-  <div class="workshop-page">
-    <section class="page-heading">
+  <main class="workshop-page">
+    <header class="page-heading">
       <h1>{{ workshop.title }}</h1>
       <p>{{ workshop.subtitle }}</p>
-    </section>
+    </header>
 
     <div class="workshop-layout">
       <section class="workshop-details">
         <template v-if="selectedSession">
-          <div class="workshop-image" role="img" aria-label="Basic household item repair workshop">
-            Workshop Image
+          <div class="workshop-image">Workshop Image</div>
+
+          <div class="session-information">
+            <div>
+              <span>Date</span>
+              <p>{{ selectedSession.displayDate }}</p>
+            </div>
+            <div>
+              <span>Time</span>
+              <p>{{ selectedSession.time }}</p>
+            </div>
+            <div>
+              <span>Location</span>
+              <p>{{ selectedSession.location }}</p>
+            </div>
+            <div>
+              <span>Places</span>
+              <p>{{ selectedSession.remainingPlaces }} remaining</p>
+            </div>
           </div>
 
-          <dl class="session-information">
-            <div class="information-item">
-              <dt>Date</dt>
-              <dd>{{ selectedSession.displayDate }}</dd>
-            </div>
-
-            <div class="information-item">
-              <dt>Time</dt>
-              <dd>{{ selectedSession.time }}</dd>
-            </div>
-
-            <div class="information-item">
-              <dt>Location</dt>
-              <dd>{{ selectedSession.location }}</dd>
-            </div>
-
-            <div class="information-item">
-              <dt>Places</dt>
-              <dd>{{ selectedSession.remainingPlaces }} remaining</dd>
-            </div>
-          </dl>
-
-          <div class="workshop-description">
+          <div class="description">
             <h2>About this workshop</h2>
             <p>{{ workshop.description }}</p>
 
             <h2>What to bring</h2>
-
             <ul>
               <li v-for="item in workshop.whatToBring" :key="item">
                 {{ item }}
@@ -94,129 +78,105 @@ function isAvailable(date) {
           </div>
         </template>
 
-        <div v-else class="unavailable-state">
-          <div class="unavailable-icon" aria-hidden="true">×</div>
-
+        <div v-else class="unavailable">
           <h2>No workshop available</h2>
-
-          <p>
-            There are no workshop sessions available on the selected date. Please choose a date
-            marked with a dot.
-          </p>
+          <p>Please choose a date marked with a dot.</p>
         </div>
       </section>
 
       <aside class="booking-section">
         <h2>Book this workshop</h2>
 
-        <section class="calendar" aria-label="Workshop calendar">
+        <div class="calendar">
           <h3>August 2026</h3>
 
-          <div class="calendar-grid calendar-weekdays">
-            <span v-for="(weekDay, index) in weekDays" :key="`${weekDay}-${index}`">
+          <div class="calendar-grid week-days">
+            <span v-for="(weekDay, index) in weekDays" :key="index">
               {{ weekDay }}
             </span>
           </div>
 
-          <div class="calendar-grid calendar-dates">
-            <span
-              v-for="blank in leadingBlankDays"
-              :key="`blank-${blank}`"
-              class="calendar-spacer"
-            />
+          <div class="calendar-grid">
+            <span v-for="blank in 5" :key="`blank-${blank}`"></span>
 
             <button
-              v-for="calendarDay in calendarDays"
-              :key="calendarDay.date"
+              v-for="day in days"
+              :key="day"
               type="button"
               class="calendar-day"
-              :class="{
-                selected: selectedDate === calendarDay.date,
-                available: isAvailable(calendarDay.date),
-              }"
-              :aria-label="`August ${calendarDay.day}, 2026`"
-              :aria-pressed="selectedDate === calendarDay.date"
-              @click="selectDate(calendarDay.date)"
+              :class="{ selected: selectedDate === dateFor(day) }"
+              @click="selectDay(day)"
             >
-              <span>{{ calendarDay.day }}</span>
-
-              <span
-                v-if="isAvailable(calendarDay.date)"
-                class="availability-dot"
-                aria-label="Workshop available"
-              />
+              {{ day }}
+              <i v-if="hasWorkshop(day)"></i>
             </button>
           </div>
-        </section>
+        </div>
 
-        <form class="booking-form" @submit.prevent>
-          <div class="form-field">
-            <label for="booking-name">Name</label>
-
+        <form class="booking-form" @submit.prevent="submitBooking">
+          <label>
+            Name
             <input
-              id="booking-name"
               v-model="bookingForm.name"
               type="text"
               placeholder="Your name"
+              required
               :disabled="!selectedSession"
             />
-          </div>
+          </label>
 
-          <div class="form-field">
-            <label for="booking-email">Email</label>
-
+          <label>
+            Email
             <input
-              id="booking-email"
               v-model="bookingForm.email"
               type="email"
               placeholder="name@example.com"
+              required
               :disabled="!selectedSession"
             />
-          </div>
+          </label>
 
-          <div class="form-field places-field">
-            <label for="number-of-places">Number of places</label>
-
+          <label class="places-field">
+            Number of places
             <input
-              id="number-of-places"
               v-model.number="bookingForm.numberOfPlaces"
               type="number"
               min="1"
               :max="selectedSession ? selectedSession.remainingPlaces : 1"
+              required
               :disabled="!selectedSession"
             />
-          </div>
+          </label>
 
           <label class="terms-field">
             <input
               v-model="bookingForm.agreedToTerms"
               type="checkbox"
+              required
               :disabled="!selectedSession"
             />
-
-            <span>I agree to the booking terms.</span>
+            I agree to the booking terms.
           </label>
 
-          <button type="submit" class="booking-button" :disabled="!selectedSession">
-            Book Workshop
-          </button>
+          <button type="submit" :disabled="!selectedSession">Book Workshop</button>
         </form>
       </aside>
     </div>
-  </div>
+  </main>
 </template>
 
 <style scoped>
 .workshop-page {
   width: calc(100% - 56px);
   max-width: 1200px;
-  margin: 0 auto;
+  margin: auto;
   padding: 26px 0 34px;
+  color: #222;
 }
 
 .page-heading {
   padding-bottom: 24px;
-  border-bottom: 1px solid #e2e2e2;
+  border-bottom: 1px solid #ddd;
 }
 
 .page-heading h1 {
@@ -227,25 +187,23 @@ function isAvailable(date) {
 
 .page-heading p {
   margin: 12px 0 0;
-  color: #909090;
+  color: #888;
   font-size: 20px;
 }
 
 .workshop-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(350px, 0.9fr);
+  grid-template-columns: 1.15fr 0.9fr;
   margin-top: 20px;
 }
 
 .workshop-details {
-  min-width: 0;
   padding: 12px 28px 0 0;
 }
 
 .booking-section {
-  min-width: 0;
   padding-left: 28px;
-  border-left: 1px solid #e2e2e2;
+  border-left: 1px solid #ddd;
 }
 
 .booking-section > h2 {
@@ -255,94 +213,70 @@ function isAvailable(date) {
 }
 
 .workshop-image {
-  width: 100%;
   min-height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e4e4e4;
+  background: #e4e4e4;
   color: #929292;
   font-size: 21px;
 }
 
 .session-information {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 24px 36px;
   margin: 24px 0;
   padding-bottom: 24px;
-  border-bottom: 1px solid #e2e2e2;
+  border-bottom: 1px solid #ddd;
 }
 
-.information-item dt {
-  margin-bottom: 5px;
-  color: #909090;
-  font-size: 16px;
+.session-information span {
+  color: #888;
 }
 
-.information-item dd {
-  margin: 0;
+.session-information p {
+  margin: 5px 0 0;
   font-size: 19px;
 }
 
-.workshop-description h2 {
+.description h2 {
   margin: 24px 0 10px;
   font-size: 22px;
   font-weight: 500;
 }
 
-.workshop-description p {
-  margin: 0;
+.description p,
+.description ul {
   font-size: 18px;
   line-height: 1.5;
 }
 
-.workshop-description ul {
-  margin: 8px 0 0;
-  font-size: 18px;
-  line-height: 1.7;
+.description p {
+  margin: 0;
 }
 
-.unavailable-state {
+.unavailable {
   min-height: 520px;
-  padding: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f5f5f5;
+  background: #f5f5f5;
   text-align: center;
 }
 
-.unavailable-icon {
-  width: 54px;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #999999;
-  border-radius: 50%;
-  color: #777777;
-  font-size: 30px;
+.unavailable h2 {
+  margin-bottom: 4px;
 }
 
-.unavailable-state h2 {
-  margin: 20px 0 10px;
-  font-size: 23px;
-  font-weight: 500;
-}
-
-.unavailable-state p {
-  max-width: 390px;
-  margin: 0;
-  color: #777777;
-  font-size: 17px;
-  line-height: 1.5;
+.unavailable p {
+  color: #777;
 }
 
 .calendar {
   padding: 16px 18px 18px;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
 }
 
 .calendar h3 {
@@ -355,89 +289,67 @@ function isAvailable(date) {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-}
-
-.calendar-weekdays {
-  margin-bottom: 8px;
-  color: #888888;
   text-align: center;
-  font-size: 14px;
 }
 
-.calendar-dates {
-  row-gap: 3px;
+.week-days {
+  margin-bottom: 8px;
+  color: #888;
 }
 
 .calendar-day {
   position: relative;
   width: 38px;
   height: 38px;
-  margin: 0 auto;
+  margin: auto;
   padding: 0 0 5px;
   border: 0;
   border-radius: 50%;
-  background: transparent;
-  color: #222222;
-  font: inherit;
+  background: none;
   cursor: pointer;
 }
 
 .calendar-day:hover {
-  background-color: #eeeeee;
+  background: #eee;
 }
 
 .calendar-day.selected {
-  background-color: #111111;
-  color: #ffffff;
+  background: #111;
+  color: white;
 }
 
-.availability-dot {
+.calendar-day i {
   position: absolute;
   bottom: 5px;
-  left: 50%;
+  left: 17px;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: #222222;
-  transform: translateX(-50%);
+  background: #222;
 }
 
-.calendar-day.selected .availability-dot {
-  background-color: #ffffff;
+.calendar-day.selected i {
+  background: white;
 }
 
 .booking-form {
   margin-top: 14px;
 }
 
-.form-field {
+.booking-form > label:not(.terms-field) {
   margin-bottom: 16px;
-}
-
-.form-field label {
   display: block;
-  margin-bottom: 6px;
   font-size: 17px;
 }
 
-.form-field input {
+.booking-form input:not([type='checkbox']) {
   width: 100%;
   min-height: 46px;
+  margin-top: 6px;
   padding: 10px 13px;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
   border-radius: 12px;
-  background-color: #ffffff;
-  color: #222222;
   font: inherit;
-}
-
-.form-field input::placeholder {
-  color: #999999;
-}
-
-.form-field input:disabled {
-  background-color: #f4f4f4;
-  cursor: not-allowed;
 }
 
 .places-field {
@@ -447,24 +359,23 @@ function isAvailable(date) {
 .terms-field {
   margin: 34px 0 24px;
   display: flex;
-  align-items: center;
   gap: 8px;
-  font-size: 16px;
 }
 
-.booking-button {
+.booking-form button {
   width: 100%;
   min-height: 46px;
   border: 0;
   border-radius: 12px;
-  background-color: #111111;
-  color: #ffffff;
+  background: #111;
+  color: white;
   font: inherit;
   cursor: pointer;
 }
 
-.booking-button:disabled {
-  background-color: #aaaaaa;
+.booking-form button:disabled,
+.booking-form input:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -486,7 +397,7 @@ function isAvailable(date) {
   .booking-section {
     margin-top: 32px;
     padding: 32px 0 0;
-    border-top: 1px solid #e2e2e2;
+    border-top: 1px solid #ddd;
     border-left: 0;
   }
 }
@@ -494,15 +405,10 @@ function isAvailable(date) {
 @media (max-width: 767px) {
   .workshop-page {
     width: calc(100% - 40px);
-    padding-top: 22px;
   }
 
   .page-heading h1 {
     font-size: 27px;
-  }
-
-  .page-heading p {
-    font-size: 17px;
   }
 }
 
@@ -517,18 +423,12 @@ function isAvailable(date) {
   }
 
   .calendar {
-    padding-right: 8px;
-    padding-left: 8px;
+    padding: 16px 8px;
   }
 
   .calendar-day {
     width: 35px;
     height: 35px;
-  }
-
-  .unavailable-state {
-    min-height: 360px;
-    padding: 24px;
   }
 }
 </style>

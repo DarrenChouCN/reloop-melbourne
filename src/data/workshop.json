@@ -1,0 +1,30 @@
+{
+  "id": "basic-repair",
+  "title": "Basic Household Item Repair",
+  "subtitle": "Learn simple repair skills with local volunteers.",
+  "description": "Bring one small household item and learn how to check common faults before recycling it.",
+  "whatToBring": ["One small household item", "Booking confirmation"],
+  "sessions": [
+    {
+      "date": "2026-08-15",
+      "displayDate": "Saturday, 15 August",
+      "time": "10:00–12:00",
+      "location": "Box Hill Community Centre",
+      "remainingPlaces": 5
+    },
+    {
+      "date": "2026-08-22",
+      "displayDate": "Saturday, 22 August",
+      "time": "10:00–12:00",
+      "location": "Box Hill Community Centre",
+      "remainingPlaces": 8
+    },
+    {
+      "date": "2026-08-29",
+      "displayDate": "Saturday, 29 August",
+      "time": "13:00–15:00",
+      "location": "Burwood Community Centre",
+      "remainingPlaces": 3
+    }
+  ]
+}

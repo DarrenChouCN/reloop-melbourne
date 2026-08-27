@@ -1,11 +1,39 @@
-<script setup></script>
+<script setup>
+import { RouterView } from 'vue-router'
+import AppHeader from './components/AppHeader.vue'
+import AppFooter from './components/AppFooter.vue'
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div class="app">
+    <AppHeader />
+
+    <main class="main-content">
+      <RouterView />
+    </main>
+
+    <AppFooter />
+  </div>
 </template>
 
-<style scoped></style>
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: #222;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+</style>

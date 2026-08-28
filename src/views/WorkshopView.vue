@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
+// Use local JSON to simulate workshop data returned by a backend API.
 import workshop from '../data/workshop.json'
 
 const selectedDate = ref('2026-08-22')
@@ -13,6 +14,7 @@ const bookingForm = reactive({
   agreedToTerms: false,
 })
 
+// Match the selected calendar date with a workshop session from the JSON data.
 const selectedSession = computed(() => {
   return workshop.sessions.find((session) => session.date === selectedDate.value)
 })
@@ -21,6 +23,7 @@ function dateFor(day) {
   return `2026-08-${String(day).padStart(2, '0')}`
 }
 
+// Check whether a date has an available session so the calendar can show a dot.
 function hasWorkshop(day) {
   return workshop.sessions.some((session) => session.date === dateFor(day))
 }
@@ -43,6 +46,7 @@ function submitBooking() {
 
     <div class="workshop-layout">
       <section class="workshop-details">
+        <!-- Switch between the workshop details and the unavailable state. -->
         <template v-if="selectedSession">
           <div class="workshop-image">Workshop Image</div>
 
@@ -113,6 +117,7 @@ function submitBooking() {
           </div>
         </div>
 
+        <!-- Use native validation for required fields, email format and booking limits. -->
         <form class="booking-form" @submit.prevent="submitBooking">
           <label>
             Name
@@ -385,6 +390,7 @@ function submitBooking() {
   }
 }
 
+/* Change the two-column layout to one column on smaller screens. */
 @media (max-width: 991px) {
   .workshop-layout {
     grid-template-columns: 1fr;

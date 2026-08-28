@@ -9,6 +9,7 @@ import AppFooter from './components/AppFooter.vue'
     <AppHeader />
 
     <main class="main-content">
+      <!-- Display the page component that matches the current route. -->
       <RouterView />
     </main>
 

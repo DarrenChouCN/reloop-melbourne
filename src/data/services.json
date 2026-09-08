@@ -1,0 +1,23 @@
+[
+  {
+    "id": "box-hill-repair-cafe",
+    "name": "Box Hill Repair Café",
+    "type": "Repair",
+    "suburb": "Box Hill",
+    "description": "Get help with common household repairs from community volunteers."
+  },
+  {
+    "id": "eastern-recycling-centre",
+    "name": "Eastern Recycling Centre",
+    "type": "Recycling",
+    "suburb": "Nunawading",
+    "description": "Find recycling options for unwanted household items."
+  },
+  {
+    "id": "community-fix-hub",
+    "name": "Community Fix Hub",
+    "type": "Repair",
+    "suburb": "Burwood",
+    "description": "Learn how to repair everyday items with help from local volunteers."
+  }
+]

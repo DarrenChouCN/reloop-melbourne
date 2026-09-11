@@ -1,12 +1,26 @@
 <script setup>
-import { RouterLink } from 'vue-router'
+import { ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { currentUser, logout } from '../services/authService'
+
+const router = useRouter()
+const logoutError = ref('')
+
+async function signOut() {
+  logoutError.value = ''
+  try {
+    logout()
+    await router.replace('/login')
+  } catch (error) {
+    logoutError.value = error.message
+  }
+}
 
 const navigationItems = [
   { label: 'Home', path: '/' },
   { label: 'Repair Services', path: '/services' },
   { label: 'Workshops', path: '/workshops/basic-repair' },
   { label: 'Reuse Guide', path: '/reuse-guide' },
-  { label: 'Login', path: '/login' },
 ]
 </script>
 
@@ -25,8 +39,23 @@ const navigationItems = [
         >
           {{ item.label }}
         </RouterLink>
+        <RouterLink
+          v-if="currentUser?.role === 'admin'"
+          to="/admin"
+          class="navigation-link"
+          exact-active-class="active-link"
+          >Admin</RouterLink
+        >
+        <template v-if="currentUser">
+          <span class="account-name">{{ currentUser.username }}</span>
+          <button class="button secondary-button" type="button" @click="signOut">Log out</button>
+        </template>
+        <RouterLink v-else to="/login" class="navigation-link" exact-active-class="active-link"
+          >Login</RouterLink
+        >
       </nav>
     </div>
+    <p v-if="logoutError" class="logout-error error-message" role="alert">{{ logoutError }}</p>
   </header>
 </template>
 
@@ -60,7 +89,18 @@ const navigationItems = [
 .navigation {
   display: flex;
   align-items: center;
-  gap: 30px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+.account-name {
+  max-width: 160px;
+  overflow-wrap: anywhere;
+}
+.logout-error {
+  margin: 0;
+  padding: 12px 20px;
 }
 
 .navigation-link {
@@ -91,8 +131,7 @@ const navigationItems = [
 
   .navigation {
     width: 100%;
-    flex-wrap: wrap;
-    gap: 12px 20px;
+    justify-content: flex-start;
   }
 
   .navigation-link {

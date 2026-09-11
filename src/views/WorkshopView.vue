@@ -38,7 +38,7 @@ function submitBooking() {
 </script>
 
 <template>
-  <main class="workshop-page">
+  <div class="page-container">
     <header class="page-heading">
       <h1>{{ workshop.title }}</h1>
       <p>{{ workshop.subtitle }}</p>
@@ -118,7 +118,7 @@ function submitBooking() {
         </div>
 
         <!-- Use native validation for required fields, email format and booking limits. -->
-        <form class="booking-form" @submit.prevent="submitBooking">
+        <form class="booking-form form-fields" @submit.prevent="submitBooking">
           <label>
             Name
             <input
@@ -163,39 +163,14 @@ function submitBooking() {
             I agree to the booking terms.
           </label>
 
-          <button type="submit" :disabled="!selectedSession">Book Workshop</button>
+          <button class="button" type="submit" :disabled="!selectedSession">Book Workshop</button>
         </form>
       </aside>
     </div>
-  </main>
+  </div>
 </template>
 
 <style scoped>
-.workshop-page {
-  width: calc(100% - 56px);
-  max-width: 1200px;
-  margin: auto;
-  padding: 26px 0 34px;
-  color: #222;
-}
-
-.page-heading {
-  padding-bottom: 24px;
-  border-bottom: 1px solid #ddd;
-}
-
-.page-heading h1 {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 500;
-}
-
-.page-heading p {
-  margin: 12px 0 0;
-  color: #888;
-  font-size: 20px;
-}
-
 .workshop-layout {
   display: grid;
   grid-template-columns: 1.15fr 0.9fr;
@@ -347,14 +322,8 @@ function submitBooking() {
   font-size: 17px;
 }
 
-.booking-form input:not([type='checkbox']) {
+.booking-form .button {
   width: 100%;
-  min-height: 46px;
-  margin-top: 6px;
-  padding: 10px 13px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  font: inherit;
 }
 
 .places-field {
@@ -363,31 +332,6 @@ function submitBooking() {
 
 .terms-field {
   margin: 34px 0 24px;
-  display: flex;
-  gap: 8px;
-}
-
-.booking-form button {
-  width: 100%;
-  min-height: 46px;
-  border: 0;
-  border-radius: 12px;
-  background: #111;
-  color: white;
-  font: inherit;
-  cursor: pointer;
-}
-
-.booking-form button:disabled,
-.booking-form input:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-@media (min-width: 1400px) {
-  .workshop-page {
-    max-width: 1320px;
-  }
 }
 
 /* Change the two-column layout to one column on smaller screens. */
@@ -408,21 +352,7 @@ function submitBooking() {
   }
 }
 
-@media (max-width: 767px) {
-  .workshop-page {
-    width: calc(100% - 40px);
-  }
-
-  .page-heading h1 {
-    font-size: 27px;
-  }
-}
-
 @media (max-width: 575px) {
-  .workshop-page {
-    width: calc(100% - 32px);
-  }
-
   .session-information {
     grid-template-columns: 1fr;
     gap: 18px;

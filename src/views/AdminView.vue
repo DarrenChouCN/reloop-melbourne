@@ -1,7 +1,8 @@
 <template>
   <section class="admin-page">
     <h1>Review Management</h1>
-    <p>Administrator access and review management are not available yet.</p>
+    <p>You are signed in as an administrator.</p>
+    <p>Review management is not available yet.</p>
   </section>
 </template>
 

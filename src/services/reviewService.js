@@ -21,20 +21,14 @@ export function getReviews() {
 
 function isValidReview(review) {
   return (
-    review !== null &&
-    typeof review === 'object' &&
-    ['id', 'serviceId', 'userId', 'username'].every(
-      (field) => typeof review[field] === 'string' && review[field].trim().length > 0,
-    ) &&
+    review &&
+    typeof review.id === 'string' &&
+    typeof review.serviceId === 'string' &&
+    typeof review.userId === 'string' &&
     Number.isInteger(review.rating) &&
     review.rating >= 1 &&
     review.rating <= 5 &&
-    typeof review.comment === 'string' &&
-    review.comment.length <= 500 &&
-    typeof review.createdAt === 'string' &&
-    Number.isFinite(Date.parse(review.createdAt)) &&
-    typeof review.updatedAt === 'string' &&
-    Number.isFinite(Date.parse(review.updatedAt))
+    typeof review.comment === 'string'
   )
 }
 

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "admin-demo",
+    "email": "admin@reloop.example",
+    "username": "admin",
+    "role": "admin",
+    "passwordHash": "cca46b666c790cc3b3314f194172111f5fe237386b0a24af283834146a78933b",
+    "passwordSalt": "2ca53654dadcc38e0a21e0e4d9230aa5",
+    "passwordIterations": 600000,
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  }
+]

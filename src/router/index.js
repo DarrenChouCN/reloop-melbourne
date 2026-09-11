@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { refreshSession } from '../services/authService'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,7 +18,13 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'admin',
+      meta: { requiresAuth: true, role: 'admin' },
       component: () => import('../views/AdminView.vue'),
+    },
+    {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: () => import('../views/ForbiddenView.vue'),
     },
     // Load the workshop booking page when this URL is selected.
     {
@@ -30,6 +37,16 @@ const router = createRouter({
       component: () => import('../views/NotFoundView.vue'),
     },
   ],
+})
+
+router.beforeEach((to) => {
+  const user = refreshSession()
+  if (to.meta.requiresAuth && !user) {
+    return { name: 'login', query: { redirect: to.path } }
+  }
+  if (to.meta.role && user?.role !== to.meta.role) {
+    return { name: 'forbidden' }
+  }
 })
 
 export default router

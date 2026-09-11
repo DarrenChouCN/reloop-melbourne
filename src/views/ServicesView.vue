@@ -3,6 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import services from '../data/services.json'
 import { getRatingSummary, getReviews } from '../services/reviewService'
+import { currentUser } from '../services/authService'
 
 const selectedServiceId = ref(null)
 const reviews = ref([])
@@ -50,7 +51,7 @@ function formatDate(date) {
 </script>
 
 <template>
-  <div class="services-page">
+  <div class="services-page page-container">
     <header class="page-heading">
       <h1>Find a Repair Service</h1>
       <p>Search for local repair and recycling services near you.</p>
@@ -58,7 +59,7 @@ function formatDate(date) {
 
     <section class="search-section" aria-label="Search for services">
       <!-- Search controls are a visual placeholder for a later assignment stage. -->
-      <fieldset class="search-fields" disabled aria-describedby="search-note">
+      <fieldset class="search-fields form-fields" disabled aria-describedby="search-note">
         <legend class="visually-hidden">Search for services</legend>
         <label>
           Item or service
@@ -76,8 +77,8 @@ function formatDate(date) {
             <option>Recycling</option>
           </select>
         </label>
-        <button type="button">Search</button>
-        <button class="secondary-button" type="button">Use My Location</button>
+        <button class="button" type="button">Search</button>
+        <button class="button secondary-button" type="button">Use My Location</button>
       </fieldset>
       <p id="search-note" class="muted">Search is not available yet. Browse the services below.</p>
     </section>
@@ -123,7 +124,7 @@ function formatDate(date) {
                   <td>{{ reviewError ? '—' : service.summary.count }}</td>
                   <td>
                     <button
-                      class="view-button"
+                      class="button view-button"
                       type="button"
                       :aria-label="`${selectedServiceId === service.id ? 'Hide' : 'View'} reviews for ${service.name}`"
                       :aria-expanded="selectedServiceId === service.id"
@@ -177,10 +178,15 @@ function formatDate(date) {
 
             <h3>Review this service</h3>
             <p id="login-note">
-              Please <RouterLink to="/login">log in</RouterLink> to submit a review.
+              <template v-if="currentUser">
+                Signed in as {{ currentUser.username }}. Review submission is not available yet.
+              </template>
+              <template v-else>
+                Please <RouterLink to="/login">log in</RouterLink> to submit a review.
+              </template>
             </p>
-            <!-- Keep submission disabled until the login module supplies a real user. -->
-            <form class="review-form" @submit.prevent>
+            <!-- Submission will be connected in the review module. -->
+            <form class="review-form form-fields" @submit.prevent>
               <fieldset disabled aria-describedby="login-note">
                 <legend class="visually-hidden">Your review</legend>
                 <label>
@@ -198,7 +204,7 @@ function formatDate(date) {
                   <input v-model="reviewForm.hasUsedService" type="checkbox" required />
                   I have used this service.
                 </label>
-                <button type="submit">Submit review</button>
+                <button class="button" type="submit">Submit review</button>
               </fieldset>
             </form>
           </template>
@@ -215,30 +221,13 @@ function formatDate(date) {
 
 <style scoped>
 .services-page {
-  width: calc(100% - 56px);
-  max-width: 1200px;
-  margin: auto;
-  padding: 26px 0 34px;
   line-height: 1.5;
 }
 
-.page-heading,
 .search-section,
 .directory-section {
   padding-bottom: 24px;
   border-bottom: 1px solid #ddd;
-}
-
-.page-heading h1 {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 500;
-}
-
-.page-heading p {
-  margin: 12px 0 0;
-  color: #666;
-  font-size: 20px;
 }
 
 .search-section,
@@ -270,13 +259,6 @@ function formatDate(date) {
   color: #666;
 }
 
-fieldset {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
 .search-fields {
   display: flex;
   align-items: flex-end;
@@ -286,67 +268,6 @@ fieldset {
 
 .search-fields label {
   flex: 1 1 180px;
-}
-
-label {
-  display: block;
-}
-
-input:not([type='checkbox']),
-select,
-textarea {
-  width: 100%;
-  min-height: 44px;
-  margin-top: 6px;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background: white;
-  color: #222;
-  font: inherit;
-}
-
-textarea {
-  resize: vertical;
-}
-
-button {
-  min-height: 44px;
-  padding: 10px 16px;
-  border: 1px solid #111;
-  border-radius: 10px;
-  background: #111;
-  color: white;
-  font: inherit;
-  cursor: pointer;
-}
-
-.secondary-button {
-  background: white;
-  color: #222;
-  border-color: #ccc;
-}
-
-:disabled {
-  cursor: not-allowed;
-}
-
-button:disabled {
-  opacity: 0.55;
-}
-
-input:disabled,
-select:disabled,
-textarea:disabled {
-  background: #f5f5f5;
-}
-
-.muted {
-  color: #666;
-}
-
-.error-message {
-  color: #a11b1b;
 }
 
 .section-heading {
@@ -432,16 +353,6 @@ tbody th {
   margin-bottom: 16px;
 }
 
-.terms-field {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.terms-field input {
-  margin-top: 6px;
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -463,14 +374,6 @@ tbody th {
 }
 
 @media (max-width: 767px) {
-  .services-page {
-    width: calc(100% - 32px);
-  }
-
-  .page-heading h1 {
-    font-size: 27px;
-  }
-
   .search-fields label {
     flex-basis: 100%;
   }

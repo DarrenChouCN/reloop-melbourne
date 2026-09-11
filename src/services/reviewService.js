@@ -1,4 +1,6 @@
 import sampleReviews from '../data/reviews.json'
+import services from '../data/services.json'
+import { getCurrentUser } from './authService'
 
 const storageKey = 'reloop-reviews'
 
@@ -30,6 +32,61 @@ function isValidReview(review) {
     review.rating <= 5 &&
     typeof review.comment === 'string'
   )
+}
+
+function saveReviews(reviews) {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(reviews))
+    return reviews
+  } catch {
+    throw new Error('Changes could not be saved. Please check browser storage and try again.')
+  }
+}
+
+export function saveReview(serviceId, { rating, comment, hasUsedService }) {
+  const user = getCurrentUser()
+  if (!user) throw new Error('Please log in to submit a review.')
+  if (!services.some((service) => service.id === serviceId)) {
+    throw new Error('This service is not available.')
+  }
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw new Error('Please choose a rating from 1 to 5.')
+  }
+  if (typeof comment !== 'string' || comment.length > 500) {
+    throw new Error('Comments must contain no more than 500 characters.')
+  }
+  if (hasUsedService !== true) throw new Error('Please confirm that you have used this service.')
+
+  const reviews = getReviews()
+  const existing = reviews.find(
+    (review) => review.serviceId === serviceId && review.userId === user.id,
+  )
+  const now = new Date().toISOString()
+  // Identity comes from the current account, never from the submitted form.
+  const review = {
+    id: existing ? existing.id : crypto.randomUUID(),
+    serviceId,
+    userId: user.id,
+    username: user.username,
+    rating,
+    comment: comment.trim(),
+    createdAt: existing ? existing.createdAt : now,
+    updatedAt: now,
+  }
+  if (existing) Object.assign(existing, review)
+  else reviews.push(review)
+  return saveReviews(reviews)
+}
+
+export function deleteReview(reviewId) {
+  if (getCurrentUser()?.role !== 'admin') {
+    throw new Error('Only administrators can delete reviews.')
+  }
+  const reviews = getReviews()
+  if (!reviews.some((review) => review.id === reviewId)) {
+    throw new Error('This review no longer exists. Please refresh the page.')
+  }
+  return saveReviews(reviews.filter((review) => review.id !== reviewId))
 }
 
 // Both the directory and the selected service use the same calculation.

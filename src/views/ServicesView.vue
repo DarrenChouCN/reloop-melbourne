@@ -1,13 +1,15 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import services from '../data/services.json'
-import { getRatingSummary, getReviews } from '../services/reviewService'
-import { currentUser } from '../services/authService'
+import { getRatingSummary, getReviews, saveReview } from '../services/reviewService'
+import { currentUser, refreshSession } from '../services/authService'
 
 const selectedServiceId = ref(null)
 const reviews = ref([])
 const reviewError = ref('')
+const submitError = ref('')
+const submitMessage = ref('')
 const reviewForm = reactive({ rating: '', comment: '', hasUsedService: false })
 
 try {
@@ -36,9 +38,36 @@ const selectedReviews = computed(() => {
 function selectService(serviceId) {
   // Select another service, or collapse the reviews for the current service.
   selectedServiceId.value = selectedServiceId.value === serviceId ? null : serviceId
-  reviewForm.rating = ''
-  reviewForm.comment = ''
+}
+
+const myReview = computed(() => {
+  return selectedReviews.value.find((review) => review.userId === currentUser.value?.id)
+})
+
+// Restore this user's existing review, or start a blank form for another service.
+watch([selectedServiceId, () => currentUser.value?.id], () => {
+  reviewForm.rating = myReview.value?.rating ?? ''
+  reviewForm.comment = myReview.value?.comment ?? ''
   reviewForm.hasUsedService = false
+  submitError.value = ''
+  submitMessage.value = ''
+})
+
+function submitReview() {
+  submitError.value = ''
+  submitMessage.value = ''
+  refreshSession()
+  const updating = Boolean(myReview.value)
+  try {
+    reviews.value = saveReview(selectedServiceId.value, reviewForm)
+    reviewForm.comment = myReview.value.comment
+    reviewForm.hasUsedService = false
+    submitMessage.value = updating
+      ? 'Your review has been updated.'
+      : 'Your review has been submitted.'
+  } catch (error) {
+    submitError.value = error.message
+  }
 }
 
 function formatDate(date) {
@@ -179,15 +208,20 @@ function formatDate(date) {
             <h3>Review this service</h3>
             <p id="login-note">
               <template v-if="currentUser">
-                Signed in as {{ currentUser.username }}. Review submission is not available yet.
+                Signed in as {{ currentUser.username }}.
+                <span v-if="myReview">You can update your existing review below.</span>
               </template>
               <template v-else>
                 Please <RouterLink to="/login">log in</RouterLink> to submit a review.
               </template>
             </p>
-            <!-- Submission will be connected in the review module. -->
-            <form class="review-form form-fields" @submit.prevent>
-              <fieldset disabled aria-describedby="login-note">
+            <p v-if="submitError" class="error-message" role="alert">{{ submitError }}</p>
+            <p v-if="submitMessage" class="success-message" role="status">{{ submitMessage }}</p>
+            <form class="review-form form-fields" @submit.prevent="submitReview">
+              <fieldset
+                :disabled="!currentUser || Boolean(reviewError)"
+                aria-describedby="login-note"
+              >
                 <legend class="visually-hidden">Your review</legend>
                 <label>
                   Rating
@@ -204,7 +238,9 @@ function formatDate(date) {
                   <input v-model="reviewForm.hasUsedService" type="checkbox" required />
                   I have used this service.
                 </label>
-                <button class="button" type="submit">Submit review</button>
+                <button class="button" type="submit">
+                  {{ myReview ? 'Update review' : 'Submit review' }}
+                </button>
               </fieldset>
             </form>
           </template>

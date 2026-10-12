@@ -104,6 +104,15 @@ fieldset.form-fields {
   color: #216137;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (max-width: 767px) {
   .page-container {
     width: calc(100% - 32px);

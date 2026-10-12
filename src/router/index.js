@@ -4,7 +4,16 @@ import { refreshSession } from '../services/authService'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/services' },
+    {
+      path: '/',
+      name: 'home',
+      component: () => import('../views/HomeView.vue'),
+    },
+    {
+      path: '/reuse-guide',
+      name: 'reuse-guide',
+      component: () => import('../views/ReuseGuideView.vue'),
+    },
     {
       path: '/services',
       name: 'services',

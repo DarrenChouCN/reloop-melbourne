@@ -1,0 +1,51 @@
+[
+  {
+    "id": "toaster",
+    "name": "Toaster",
+    "category": "Small Appliances",
+    "description": "Check whether it can be repaired before recycling.",
+    "steps": ["Repair", "Reuse", "Recycle"]
+  },
+  {
+    "id": "desk-lamp",
+    "name": "Desk Lamp",
+    "category": "Small Appliances",
+    "description": "Try a repair workshop or ask an e-waste service about collection.",
+    "steps": ["Repair", "Recycle"]
+  },
+  {
+    "id": "electric-kettle",
+    "name": "Electric Kettle",
+    "category": "Small Appliances",
+    "description": "Check local repair and e-waste options for unwanted electrical items.",
+    "steps": ["Repair", "Recycle"]
+  },
+  {
+    "id": "clothing",
+    "name": "Clothing",
+    "category": "Clothing",
+    "description": "Mend damaged clothing or pass on clean, wearable items.",
+    "steps": ["Repair", "Reuse", "Recycle"]
+  },
+  {
+    "id": "chair",
+    "name": "Chair",
+    "category": "Furniture",
+    "description": "Consider repairing a damaged chair or passing on one in usable condition.",
+    "steps": ["Repair", "Reuse", "Recycle"]
+  },
+  {
+    "id": "batteries",
+    "name": "Batteries",
+    "category": "Batteries",
+    "description": "Find a battery collection service and check which types it accepts.",
+    "steps": ["Recycle"]
+  },
+  {
+    "id": "glass",
+    "name": "Glass Bottles and Jars",
+    "category": "Glass",
+    "description": "Reuse bottles and jars where practical. Check your council's recycling guidance.",
+    "steps": ["Reuse", "Recycle"]
+  }
+]

@@ -389,15 +389,6 @@ tbody th {
   margin-bottom: 16px;
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 @media (max-width: 991px) {
   .services-layout {
     grid-template-columns: 1fr;

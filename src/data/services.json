@@ -33,5 +33,86 @@
     "postcode": "3125",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
     "description": "Learn how to repair everyday items with help from local volunteers."
+  },
+  {
+    "id": "demo-camberwell-repair",
+    "name": "Camberwell Repair Service (demo)",
+    "type": "Repair",
+    "suburb": "Camberwell",
+    "postcode": "3124",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-doncaster-recycling",
+    "name": "Doncaster Recycling Service (demo)",
+    "type": "Recycling",
+    "suburb": "Doncaster",
+    "postcode": "3108",
+    "items": ["Batteries", "Glass Bottles and Jars"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-richmond-repair",
+    "name": "Richmond Repair Service (demo)",
+    "type": "Repair",
+    "suburb": "Richmond",
+    "postcode": "3121",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-hawthorn-repair",
+    "name": "Hawthorn Repair Service (demo)",
+    "type": "Repair",
+    "suburb": "Hawthorn",
+    "postcode": "3122",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-glen-waverley-recycling",
+    "name": "Glen Waverley Recycling Service (demo)",
+    "type": "Recycling",
+    "suburb": "Glen Waverley",
+    "postcode": "3150",
+    "items": ["Batteries", "Glass Bottles and Jars"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-ringwood-repair",
+    "name": "Ringwood Repair Service (demo)",
+    "type": "Repair",
+    "suburb": "Ringwood",
+    "postcode": "3134",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-balwyn-repair",
+    "name": "Balwyn Repair Service (demo)",
+    "type": "Repair",
+    "suburb": "Balwyn",
+    "postcode": "3103",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-blackburn-recycling",
+    "name": "Blackburn Recycling Service (demo)",
+    "type": "Recycling",
+    "suburb": "Blackburn",
+    "postcode": "3130",
+    "items": ["Batteries", "Glass Bottles and Jars"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
+  },
+  {
+    "id": "demo-vermont-repair",
+    "name": "Vermont Repair Service (demo)",
+    "type": "Repair",
+    "suburb": "Vermont",
+    "postcode": "3133",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
+    "description": "Fictional service for testing the directory. This is not a real provider."
   }
 ]

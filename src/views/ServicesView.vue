@@ -14,18 +14,34 @@ const reviewForm = reactive({ rating: '', comment: '', hasUsedService: false })
 const route = useRoute()
 const searchForm = reactive({ keyword: '', location: '', type: '' })
 const searchFilters = reactive({ keyword: '', location: '', type: '' })
+const columns = [
+  { key: 'name', label: 'Service name' },
+  { key: 'type', label: 'Type' },
+  { key: 'suburb', label: 'Suburb' },
+  { key: 'rating', label: 'Rating' },
+  { key: 'reviews', label: 'Reviews' },
+]
+const columnFilters = reactive({ name: '', type: '', suburb: '', rating: '', reviews: '' })
+const sortKey = ref('name')
+const sortAscending = ref(true)
+const currentPage = ref(1)
+const pageSize = 10
 
 function searchServices() {
   searchFilters.keyword = searchForm.keyword.trim().toLowerCase()
   searchFilters.location = searchForm.location.trim().toLowerCase()
   searchFilters.type = searchForm.type
   selectedServiceId.value = null
+  currentPage.value = 1
 }
 
 function resetSearch() {
   searchForm.keyword = ''
   searchForm.location = ''
   searchForm.type = ''
+  for (const column of columns) columnFilters[column.key] = ''
+  sortKey.value = 'name'
+  sortAscending.value = true
   searchServices()
 }
 
@@ -33,9 +49,8 @@ function resetSearch() {
 watch(
   () => route.query.q,
   (keyword) => {
+    resetSearch()
     searchForm.keyword = typeof keyword === 'string' ? keyword : ''
-    searchForm.location = ''
-    searchForm.type = ''
     searchServices()
   },
   { immediate: true },
@@ -62,6 +77,57 @@ const serviceDirectory = computed(() => {
       ...service,
       summary: getRatingSummary(reviews.value.filter((review) => review.serviceId === service.id)),
     }))
+})
+
+function getColumnValue(service, key) {
+  if (key === 'rating') {
+    if (reviewError.value) return 'Unavailable'
+    return service.summary.count ? service.summary.average : 'No ratings yet'
+  }
+  if (key === 'reviews') return reviewError.value ? 'Unavailable' : service.summary.count
+  return service[key]
+}
+
+const tableResults = computed(() => {
+  const results = serviceDirectory.value.filter((service) =>
+    columns.every((column) => {
+      return String(getColumnValue(service, column.key))
+        .toLowerCase()
+        .includes(columnFilters[column.key].trim().toLowerCase())
+    }),
+  )
+  return results.sort((first, second) => {
+    const firstValue = getColumnValue(first, sortKey.value)
+    const secondValue = getColumnValue(second, sortKey.value)
+    const difference = ['rating', 'reviews'].includes(sortKey.value)
+      ? (Number(firstValue) || 0) - (Number(secondValue) || 0)
+      : String(firstValue).localeCompare(String(secondValue), 'en', { sensitivity: 'base' })
+    return sortAscending.value ? difference : -difference
+  })
+})
+const pageCount = computed(() => Math.max(1, Math.ceil(tableResults.value.length / pageSize)))
+const pageServices = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return tableResults.value.slice(start, start + pageSize)
+})
+
+function sortServices(key) {
+  sortAscending.value = sortKey.value === key ? !sortAscending.value : true
+  sortKey.value = key
+  currentPage.value = 1
+  selectedServiceId.value = null
+}
+
+watch(columnFilters, () => {
+  currentPage.value = 1
+  selectedServiceId.value = null
+})
+watch(currentPage, () => {
+  selectedServiceId.value = null
+})
+// A review update can change a rating filter's result count.
+watch(pageCount, (count) => {
+  currentPage.value = Math.min(currentPage.value, count)
 })
 
 const selectedService = computed(() => {
@@ -158,31 +224,70 @@ function formatDate(date) {
           <div class="section-heading">
             <h2 id="directory-heading">Service Directory</h2>
             <span class="muted" role="status"
-              >{{ serviceDirectory.length }}
-              {{ serviceDirectory.length === 1 ? 'service' : 'services' }}</span
+              >{{ tableResults.length }}
+              {{ tableResults.length === 1 ? 'service' : 'services' }}</span
             >
           </div>
-          <p class="muted">Sample services and reviews for demonstration.</p>
+          <p class="muted">
+            Sample services and reviews for demonstration. Click a column heading to sort, or type
+            below it to filter.
+          </p>
           <p v-if="reviewError" class="error-message" role="alert">{{ reviewError }}</p>
 
-          <div class="table-container" role="region" aria-label="Service directory" tabindex="0">
+          <div
+            class="table-container form-fields"
+            role="region"
+            aria-label="Service directory"
+            tabindex="0"
+          >
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Service name</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Suburb</th>
-                  <th scope="col">Rating</th>
-                  <th scope="col">Reviews</th>
+                  <th
+                    v-for="column in columns"
+                    :key="column.key"
+                    scope="col"
+                    :aria-sort="
+                      sortKey === column.key ? (sortAscending ? 'ascending' : 'descending') : 'none'
+                    "
+                  >
+                    <button
+                      class="button view-button"
+                      type="button"
+                      :disabled="Boolean(reviewError) && ['rating', 'reviews'].includes(column.key)"
+                      @click="sortServices(column.key)"
+                    >
+                      {{ column.label }}
+                      <span v-if="sortKey === column.key" aria-hidden="true">{{
+                        sortAscending ? '↑' : '↓'
+                      }}</span>
+                    </button>
+                  </th>
                   <th scope="col">Action</th>
+                </tr>
+                <tr>
+                  <td v-for="column in columns" :key="column.key">
+                    <input
+                      v-model="columnFilters[column.key]"
+                      type="search"
+                      :aria-label="`Filter by ${column.label.toLowerCase()}`"
+                      :placeholder="`Filter ${column.label.toLowerCase()}`"
+                      :disabled="Boolean(reviewError) && ['rating', 'reviews'].includes(column.key)"
+                    />
+                  </td>
+                  <td>
+                    <button class="button secondary-button" type="button" @click="resetSearch">
+                      Reset
+                    </button>
+                  </td>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="!serviceDirectory.length">
+                <tr v-if="!tableResults.length">
                   <td colspan="6">No services found. Try another search or reset the filters.</td>
                 </tr>
                 <tr
-                  v-for="service in serviceDirectory"
+                  v-for="service in pageServices"
                   :key="service.id"
                   :class="{ 'selected-row': selectedServiceId === service.id }"
                 >
@@ -213,6 +318,28 @@ function formatDate(date) {
               </tbody>
             </table>
           </div>
+          <nav class="section-heading" aria-label="Service directory pages">
+            <button
+              class="button secondary-button"
+              type="button"
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+            >
+              Previous
+            </button>
+            <p role="status">
+              Page {{ currentPage }} of {{ pageCount }} · {{ tableResults.length }} services · 10
+              per page
+            </p>
+            <button
+              class="button secondary-button"
+              type="button"
+              :disabled="currentPage === pageCount"
+              @click="currentPage++"
+            >
+              Next
+            </button>
+          </nav>
         </section>
 
         <section

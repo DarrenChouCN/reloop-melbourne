@@ -28,5 +28,95 @@
     "comment": "The staff helped me find the right recycling area.",
     "createdAt": "2026-09-05T01:15:00.000Z",
     "updatedAt": "2026-09-05T01:15:00.000Z"
+  },
+  {
+    "id": "demo-review-4",
+    "serviceId": "demo-camberwell-repair",
+    "userId": "demo-user-4",
+    "username": "Demo User 4",
+    "rating": 5,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-04T02:00:00.000Z",
+    "updatedAt": "2026-09-04T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-5",
+    "serviceId": "demo-doncaster-recycling",
+    "userId": "demo-user-5",
+    "username": "Demo User 5",
+    "rating": 1,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-05T02:00:00.000Z",
+    "updatedAt": "2026-09-05T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-6",
+    "serviceId": "demo-richmond-repair",
+    "userId": "demo-user-6",
+    "username": "Demo User 6",
+    "rating": 2,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-06T02:00:00.000Z",
+    "updatedAt": "2026-09-06T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-7",
+    "serviceId": "demo-hawthorn-repair",
+    "userId": "demo-user-7",
+    "username": "Demo User 7",
+    "rating": 3,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-07T02:00:00.000Z",
+    "updatedAt": "2026-09-07T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-8",
+    "serviceId": "demo-glen-waverley-recycling",
+    "userId": "demo-user-8",
+    "username": "Demo User 8",
+    "rating": 4,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-08T02:00:00.000Z",
+    "updatedAt": "2026-09-08T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-9",
+    "serviceId": "demo-ringwood-repair",
+    "userId": "demo-user-9",
+    "username": "Demo User 9",
+    "rating": 5,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-09T02:00:00.000Z",
+    "updatedAt": "2026-09-09T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-10",
+    "serviceId": "demo-balwyn-repair",
+    "userId": "demo-user-10",
+    "username": "Demo User 10",
+    "rating": 1,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-10T02:00:00.000Z",
+    "updatedAt": "2026-09-10T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-11",
+    "serviceId": "demo-blackburn-recycling",
+    "userId": "demo-user-11",
+    "username": "Demo User 11",
+    "rating": 2,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-11T02:00:00.000Z",
+    "updatedAt": "2026-09-11T02:00:00.000Z"
+  },
+  {
+    "id": "demo-review-12",
+    "serviceId": "demo-vermont-repair",
+    "userId": "demo-user-12",
+    "username": "Demo User 12",
+    "rating": 3,
+    "comment": "Fictional review for testing sorting, search and pagination.",
+    "createdAt": "2026-09-12T02:00:00.000Z",
+    "updatedAt": "2026-09-12T02:00:00.000Z"
   }
 ]

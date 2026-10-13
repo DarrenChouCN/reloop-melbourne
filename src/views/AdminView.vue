@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import services from '../data/services.json'
 import { getReviews, deleteReview } from '../services/reviewService'
 import { currentUser, refreshSession } from '../services/authService'
@@ -7,6 +7,18 @@ import { currentUser, refreshSession } from '../services/authService'
 const reviews = ref([])
 const errorMessage = ref('')
 const successMessage = ref('')
+const columns = [
+  { key: 'service', label: 'Service' },
+  { key: 'username', label: 'User' },
+  { key: 'rating', label: 'Rating' },
+  { key: 'comment', label: 'Comment' },
+  { key: 'date', label: 'Date' },
+]
+const columnFilters = reactive({ service: '', username: '', rating: '', comment: '', date: '' })
+const sortKey = ref('date')
+const sortAscending = ref(false)
+const currentPage = ref(1)
+const pageSize = 10
 
 try {
   reviews.value = getReviews()
@@ -17,6 +29,68 @@ try {
 function serviceName(serviceId) {
   return services.find((service) => service.id === serviceId)?.name ?? 'Unknown service'
 }
+
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-AU')
+}
+
+function getColumnValue(review, key) {
+  if (key === 'service') return serviceName(review.serviceId)
+  if (key === 'date') return formatDate(review.createdAt)
+  if (key === 'comment') return review.comment || 'No comment'
+  return review[key]
+}
+
+const filteredReviews = computed(() => {
+  const results = reviews.value.filter((review) =>
+    columns.every((column) => {
+      const value = getColumnValue(review, column.key)
+      // Dates can be searched as displayed, or as YYYY-MM-DD.
+      const text =
+        column.key === 'date' ? `${value} ${review.createdAt.slice(0, 10)}` : String(value)
+      return text.toLowerCase().includes(columnFilters[column.key].trim().toLowerCase())
+    }),
+  )
+  return results.sort((first, second) => {
+    let difference
+    if (sortKey.value === 'date')
+      difference = Date.parse(first.createdAt) - Date.parse(second.createdAt)
+    else if (sortKey.value === 'rating') difference = first.rating - second.rating
+    else
+      difference = String(getColumnValue(first, sortKey.value)).localeCompare(
+        String(getColumnValue(second, sortKey.value)),
+        'en',
+        { sensitivity: 'base' },
+      )
+    return sortAscending.value ? difference : -difference
+  })
+})
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredReviews.value.length / pageSize)))
+const pageReviews = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredReviews.value.slice(start, start + pageSize)
+})
+
+function sortReviews(key) {
+  sortAscending.value = sortKey.value === key ? !sortAscending.value : true
+  sortKey.value = key
+  currentPage.value = 1
+}
+
+function resetFilters() {
+  for (const column of columns) columnFilters[column.key] = ''
+  sortKey.value = 'date'
+  sortAscending.value = false
+  currentPage.value = 1
+}
+
+watch(columnFilters, () => {
+  currentPage.value = 1
+})
+// Deleting the last review on a page returns to the preceding page.
+watch(pageCount, (count) => {
+  currentPage.value = Math.min(currentPage.value, count)
+})
 
 function removeReview(review) {
   errorMessage.value = ''
@@ -45,11 +119,14 @@ function removeReview(review) {
     <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
 
     <template v-if="currentUser?.role === 'admin'">
-      <p>{{ reviews.length }} reviews</p>
+      <p role="status">{{ filteredReviews.length }} of {{ reviews.length }} reviews</p>
+      <p class="muted">
+        Click a column heading to sort, or type below it to filter. Dates also accept YYYY-MM-DD.
+      </p>
       <p v-if="!reviews.length && !errorMessage" class="muted">No reviews to manage.</p>
       <div
         v-if="reviews.length"
-        class="table-container"
+        class="table-container form-fields"
         role="region"
         aria-label="Review management"
         tabindex="0"
@@ -57,24 +134,56 @@ function removeReview(review) {
         <table>
           <thead>
             <tr>
-              <th scope="col">Service</th>
-              <th scope="col">User</th>
-              <th scope="col">Rating</th>
-              <th scope="col">Comment</th>
-              <th scope="col">Date</th>
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                scope="col"
+                :aria-sort="
+                  sortKey === column.key ? (sortAscending ? 'ascending' : 'descending') : 'none'
+                "
+              >
+                <button
+                  class="button secondary-button"
+                  type="button"
+                  @click="sortReviews(column.key)"
+                >
+                  {{ column.label }}
+                  <span v-if="sortKey === column.key" aria-hidden="true">{{
+                    sortAscending ? '↑' : '↓'
+                  }}</span>
+                </button>
+              </th>
               <th scope="col">Action</th>
+            </tr>
+            <tr>
+              <td v-for="column in columns" :key="column.key">
+                <input
+                  v-model="columnFilters[column.key]"
+                  type="search"
+                  :aria-label="`Filter by ${column.label.toLowerCase()}`"
+                  :placeholder="`Filter ${column.label.toLowerCase()}`"
+                />
+              </td>
+              <td>
+                <button class="button secondary-button" type="button" @click="resetFilters">
+                  Reset
+                </button>
+              </td>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="review in reviews" :key="review.id">
+            <tr v-if="!filteredReviews.length">
+              <td colspan="6">
+                No reviews match these filters. Try another search or reset the filters.
+              </td>
+            </tr>
+            <tr v-for="review in pageReviews" :key="review.id">
               <td>{{ serviceName(review.serviceId) }}</td>
               <td>{{ review.username }}</td>
               <td>{{ review.rating }} / 5</td>
               <td class="comment">{{ review.comment || 'No comment' }}</td>
               <td>
-                <time :datetime="review.createdAt">{{
-                  new Date(review.createdAt).toLocaleDateString('en-AU')
-                }}</time>
+                <time :datetime="review.createdAt">{{ formatDate(review.createdAt) }}</time>
               </td>
               <td>
                 <button
@@ -90,6 +199,25 @@ function removeReview(review) {
           </tbody>
         </table>
       </div>
+      <nav v-if="reviews.length" class="table-controls" aria-label="Review management pages">
+        <button
+          class="button secondary-button"
+          type="button"
+          :disabled="currentPage === 1"
+          @click="currentPage--"
+        >
+          Previous
+        </button>
+        <p role="status">Page {{ currentPage }} of {{ pageCount }} · 10 per page</p>
+        <button
+          class="button secondary-button"
+          type="button"
+          :disabled="currentPage === pageCount"
+          @click="currentPage++"
+        >
+          Next
+        </button>
+      </nav>
     </template>
     <p v-else>Please log in as an administrator to manage reviews.</p>
   </section>
@@ -101,6 +229,13 @@ function removeReview(review) {
 }
 .table-container {
   overflow-x: auto;
+}
+.table-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 table {
   width: 100%;

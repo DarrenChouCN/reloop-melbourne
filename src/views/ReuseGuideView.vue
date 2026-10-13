@@ -88,7 +88,7 @@ function selectCategory(value) {
               <ol class="steps" aria-label="Suggested order">
                 <li v-for="(step, index) in item.steps" :key="step">{{ index + 1 }}. {{ step }}</li>
               </ol>
-              <RouterLink to="/services"
+              <RouterLink :to="{ path: '/services', query: { q: item.name } }"
                 >View local options<span class="visually-hidden">
                   for {{ item.name }}</span
                 ></RouterLink

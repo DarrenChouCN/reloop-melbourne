@@ -4,6 +4,8 @@
     "name": "Box Hill Repair Café",
     "type": "Repair",
     "suburb": "Box Hill",
+    "postcode": "3128",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
     "description": "Get help with common household repairs from community volunteers."
   },
   {
@@ -11,6 +13,16 @@
     "name": "Eastern Recycling Centre",
     "type": "Recycling",
     "suburb": "Nunawading",
+    "postcode": "3131",
+    "items": [
+      "Toaster",
+      "Desk Lamp",
+      "Electric Kettle",
+      "Clothing",
+      "Chair",
+      "Batteries",
+      "Glass Bottles and Jars"
+    ],
     "description": "Find recycling options for unwanted household items."
   },
   {
@@ -18,6 +30,8 @@
     "name": "Community Fix Hub",
     "type": "Repair",
     "suburb": "Burwood",
+    "postcode": "3125",
+    "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
     "description": "Learn how to repair everyday items with help from local volunteers."
   }
 ]

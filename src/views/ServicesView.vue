@@ -1,6 +1,6 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import services from '../data/services.json'
 import { getRatingSummary, getReviews, saveReview } from '../services/reviewService'
 import { currentUser, refreshSession } from '../services/authService'
@@ -11,6 +11,35 @@ const reviewError = ref('')
 const submitError = ref('')
 const submitMessage = ref('')
 const reviewForm = reactive({ rating: '', comment: '', hasUsedService: false })
+const route = useRoute()
+const searchForm = reactive({ keyword: '', location: '', type: '' })
+const searchFilters = reactive({ keyword: '', location: '', type: '' })
+
+function searchServices() {
+  searchFilters.keyword = searchForm.keyword.trim().toLowerCase()
+  searchFilters.location = searchForm.location.trim().toLowerCase()
+  searchFilters.type = searchForm.type
+  selectedServiceId.value = null
+}
+
+function resetSearch() {
+  searchForm.keyword = ''
+  searchForm.location = ''
+  searchForm.type = ''
+  searchServices()
+}
+
+// Apply the item name when arriving from the reuse guide, including browser back/forward.
+watch(
+  () => route.query.q,
+  (keyword) => {
+    searchForm.keyword = typeof keyword === 'string' ? keyword : ''
+    searchForm.location = ''
+    searchForm.type = ''
+    searchServices()
+  },
+  { immediate: true },
+)
 
 try {
   reviews.value = getReviews()
@@ -19,10 +48,20 @@ try {
 }
 
 const serviceDirectory = computed(() => {
-  return services.map((service) => ({
-    ...service,
-    summary: getRatingSummary(reviews.value.filter((review) => review.serviceId === service.id)),
-  }))
+  return services
+    .filter((service) => {
+      const text = `${service.name} ${service.description} ${service.items.join(' ')}`.toLowerCase()
+      const location = `${service.suburb} ${service.postcode}`.toLowerCase()
+      return (
+        text.includes(searchFilters.keyword) &&
+        location.includes(searchFilters.location) &&
+        (!searchFilters.type || service.type === searchFilters.type)
+      )
+    })
+    .map((service) => ({
+      ...service,
+      summary: getRatingSummary(reviews.value.filter((review) => review.serviceId === service.id)),
+    }))
 })
 
 const selectedService = computed(() => {
@@ -87,29 +126,30 @@ function formatDate(date) {
     </header>
 
     <section class="search-section" aria-label="Search for services">
-      <!-- Search controls are a visual placeholder for a later assignment stage. -->
-      <fieldset class="search-fields form-fields" disabled aria-describedby="search-note">
-        <legend class="visually-hidden">Search for services</legend>
+      <form class="search-fields form-fields" @submit.prevent="searchServices">
         <label>
           Item or service
-          <input type="search" placeholder="e.g. toaster" />
+          <input v-model="searchForm.keyword" type="search" placeholder="e.g. toaster" />
         </label>
         <label>
           Location
-          <input type="text" placeholder="Suburb or postcode" />
+          <input v-model="searchForm.location" type="text" placeholder="Suburb or postcode" />
         </label>
         <label>
           Service type
-          <select>
-            <option>All types</option>
+          <select v-model="searchForm.type">
+            <option value="">All types</option>
             <option>Repair</option>
             <option>Recycling</option>
           </select>
         </label>
-        <button class="button" type="button">Search</button>
-        <button class="button secondary-button" type="button">Use My Location</button>
-      </fieldset>
-      <p id="search-note" class="muted">Search is not available yet. Browse the services below.</p>
+        <button class="button" type="submit">Search</button>
+        <button class="button secondary-button" type="button" @click="resetSearch">Reset</button>
+        <button class="button secondary-button" type="button" disabled>Use My Location</button>
+      </form>
+      <p class="muted">
+        Search by item, service name, suburb or postcode. Location detection is not available yet.
+      </p>
     </section>
 
     <div class="services-layout">
@@ -117,7 +157,10 @@ function formatDate(date) {
         <section class="directory-section" aria-labelledby="directory-heading">
           <div class="section-heading">
             <h2 id="directory-heading">Service Directory</h2>
-            <span class="muted">{{ services.length }} services</span>
+            <span class="muted" role="status"
+              >{{ serviceDirectory.length }}
+              {{ serviceDirectory.length === 1 ? 'service' : 'services' }}</span
+            >
           </div>
           <p class="muted">Sample services and reviews for demonstration.</p>
           <p v-if="reviewError" class="error-message" role="alert">{{ reviewError }}</p>
@@ -135,6 +178,9 @@ function formatDate(date) {
                 </tr>
               </thead>
               <tbody>
+                <tr v-if="!serviceDirectory.length">
+                  <td colspan="6">No services found. Try another search or reset the filters.</td>
+                </tr>
                 <tr
                   v-for="service in serviceDirectory"
                   :key="service.id"

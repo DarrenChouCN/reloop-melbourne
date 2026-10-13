@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import services from '../data/services.json'
 import { getReviews, deleteReview } from '../services/reviewService'
 import { currentUser, refreshSession } from '../services/authService'
+import { downloadCsv, downloadPdf } from '../services/exportService'
 
 const reviews = ref([])
 const errorMessage = ref('')
@@ -19,6 +20,9 @@ const sortKey = ref('date')
 const sortAscending = ref(false)
 const currentPage = ref(1)
 const pageSize = 10
+const exporting = ref(false)
+const exportError = ref('')
+const exportMessage = ref('')
 
 try {
   reviews.value = getReviews()
@@ -71,6 +75,34 @@ const pageReviews = computed(() => {
   return filteredReviews.value.slice(start, start + pageSize)
 })
 
+async function exportTable(format) {
+  exportError.value = ''
+  exportMessage.value = ''
+  refreshSession()
+  if (currentUser.value?.role !== 'admin') {
+    exportError.value = 'Please log in as an administrator to export reviews.'
+    return
+  }
+  const rows = filteredReviews.value.map((review) => ({
+    service: serviceName(review.serviceId),
+    username: review.username,
+    rating: review.rating,
+    comment: getColumnValue(review, 'comment'),
+    date: formatDate(review.createdAt),
+  }))
+  if (!rows.length || exporting.value) return
+  exporting.value = true
+  try {
+    if (format === 'csv') downloadCsv('Review Management', columns, rows)
+    else await downloadPdf('Review Management', columns, rows)
+    exportMessage.value = `Exported ${rows.length} reviews as ${format.toUpperCase()}.`
+  } catch (error) {
+    exportError.value = error.message || 'The file could not be exported. Please try again.'
+  } finally {
+    exporting.value = false
+  }
+}
+
 function sortReviews(key) {
   sortAscending.value = sortKey.value === key ? !sortAscending.value : true
   sortKey.value = key
@@ -117,9 +149,33 @@ function removeReview(review) {
     </header>
     <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
     <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
+    <p v-if="exportError" class="error-message" role="alert">{{ exportError }}</p>
 
     <template v-if="currentUser?.role === 'admin'">
       <p role="status">{{ filteredReviews.length }} of {{ reviews.length }} reviews</p>
+      <p>
+        <button
+          class="button secondary-button"
+          type="button"
+          :disabled="exporting || !filteredReviews.length"
+          @click="exportTable('csv')"
+        >
+          Export CSV
+        </button>
+        <button
+          class="button secondary-button"
+          type="button"
+          :disabled="exporting || !filteredReviews.length"
+          @click="exportTable('pdf')"
+        >
+          Export PDF
+        </button>
+      </p>
+      <p class="muted">
+        Exports include all filtered results across every page, in the current sort order.
+      </p>
+      <p v-if="exporting" role="status">Preparing your file…</p>
+      <p v-if="exportMessage" class="success-message" role="status">{{ exportMessage }}</p>
       <p class="muted">
         Click a column heading to sort, or type below it to filter. Dates also accept YYYY-MM-DD.
       </p>

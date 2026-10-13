@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import services from '../data/services.json'
 import { getRatingSummary, getReviews, saveReview } from '../services/reviewService'
 import { currentUser, refreshSession } from '../services/authService'
+import { downloadCsv, downloadPdf } from '../services/exportService'
 
 const selectedServiceId = ref(null)
 const reviews = ref([])
@@ -26,6 +27,9 @@ const sortKey = ref('name')
 const sortAscending = ref(true)
 const currentPage = ref(1)
 const pageSize = 10
+const exporting = ref(false)
+const exportError = ref('')
+const exportMessage = ref('')
 
 function searchServices() {
   searchFilters.keyword = searchForm.keyword.trim().toLowerCase()
@@ -110,6 +114,29 @@ const pageServices = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   return tableResults.value.slice(start, start + pageSize)
 })
+
+async function exportTable(format) {
+  exportError.value = ''
+  exportMessage.value = ''
+  const rows = tableResults.value.map((service) => ({
+    name: service.name,
+    type: service.type,
+    suburb: service.suburb,
+    rating: getColumnValue(service, 'rating'),
+    reviews: getColumnValue(service, 'reviews'),
+  }))
+  if (!rows.length || exporting.value) return
+  exporting.value = true
+  try {
+    if (format === 'csv') downloadCsv('Service Directory', columns, rows)
+    else await downloadPdf('Service Directory', columns, rows)
+    exportMessage.value = `Exported ${rows.length} services as ${format.toUpperCase()}.`
+  } catch (error) {
+    exportError.value = error.message || 'The file could not be exported. Please try again.'
+  } finally {
+    exporting.value = false
+  }
+}
 
 function sortServices(key) {
   sortAscending.value = sortKey.value === key ? !sortAscending.value : true
@@ -233,6 +260,30 @@ function formatDate(date) {
             below it to filter.
           </p>
           <p v-if="reviewError" class="error-message" role="alert">{{ reviewError }}</p>
+          <p>
+            <button
+              class="button secondary-button"
+              type="button"
+              :disabled="exporting || !tableResults.length"
+              @click="exportTable('csv')"
+            >
+              Export CSV
+            </button>
+            <button
+              class="button secondary-button"
+              type="button"
+              :disabled="exporting || !tableResults.length"
+              @click="exportTable('pdf')"
+            >
+              Export PDF
+            </button>
+          </p>
+          <p class="muted">
+            Exports include all filtered results across every page, in the current sort order.
+          </p>
+          <p v-if="exporting" role="status">Preparing your file…</p>
+          <p v-if="exportError" class="error-message" role="alert">{{ exportError }}</p>
+          <p v-if="exportMessage" class="success-message" role="status">{{ exportMessage }}</p>
 
           <div
             class="table-container form-fields"

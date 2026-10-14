@@ -428,7 +428,7 @@ async function removeBooking(booking) {
   align-items: center;
   justify-content: center;
   background: #e4e4e4;
-  color: #929292;
+  color: #555555;
   font-size: 21px;
 }
 
@@ -442,7 +442,7 @@ async function removeBooking(booking) {
 }
 
 .session-information span {
-  color: #888;
+  color: #666;
 }
 
 .session-information p {
@@ -481,7 +481,7 @@ async function removeBooking(booking) {
 }
 
 .unavailable p {
-  color: #777;
+  color: #666;
 }
 
 .calendar {
@@ -504,12 +504,13 @@ async function removeBooking(booking) {
 
 .week-days {
   margin-bottom: 8px;
-  color: #888;
+  color: #666;
 }
 
 .calendar-day {
   position: relative;
   width: 38px;
+  max-width: 100%;
   height: 38px;
   margin: auto;
   padding: 0 0 5px;

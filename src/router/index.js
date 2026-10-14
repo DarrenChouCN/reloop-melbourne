@@ -7,42 +7,59 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
+      meta: { title: 'Home' },
       component: () => import('../views/HomeView.vue'),
     },
     {
       path: '/reuse-guide',
       name: 'reuse-guide',
+      meta: { title: 'Reuse Guide' },
       component: () => import('../views/ReuseGuideView.vue'),
     },
     {
       path: '/services',
       name: 'services',
+      meta: { title: 'Repair Services' },
       component: () => import('../views/ServicesView.vue'),
     },
     {
       path: '/login',
       name: 'login',
+      meta: { title: 'Your Account' },
       component: () => import('../views/LoginView.vue'),
     },
     {
       path: '/admin',
       name: 'admin',
-      meta: { requiresAuth: true, role: 'admin' },
+      meta: { title: 'Admin Dashboard', requiresAuth: true, role: 'admin' },
       component: () => import('../views/AdminView.vue'),
     },
     {
       path: '/forbidden',
       name: 'forbidden',
+      meta: { title: 'Access Denied' },
       component: () => import('../views/ForbiddenView.vue'),
     },
     // Load the workshop booking page when this URL is selected.
     {
       path: '/workshops/basic-repair',
       name: 'basic-repair',
+      meta: { title: 'Workshop Bookings' },
       component: () => import('../views/WorkshopView.vue'),
     },
+    ...['about', 'accessibility', 'privacy'].map((name) => ({
+      path: `/${name}`,
+      name,
+      meta: {
+        title: { about: 'About & Contact', accessibility: 'Accessibility', privacy: 'Privacy' }[
+          name
+        ],
+      },
+      component: () => import('../views/InformationView.vue'),
+    })),
     {
       path: '/:pathMatch(.*)*',
+      meta: { title: 'Page Unavailable' },
       component: () => import('../views/NotFoundView.vue'),
     },
   ],
@@ -56,6 +73,10 @@ router.beforeEach((to) => {
   if (to.meta.role && user?.role !== to.meta.role) {
     return { name: 'forbidden' }
   }
+})
+
+router.afterEach((to, from, failure) => {
+  if (!failure) document.title = `${to.meta.title} | ReLoop Melbourne`
 })
 
 export default router

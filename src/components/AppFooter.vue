@@ -34,7 +34,7 @@ const footerLinks = [
 }
 
 .footer-link {
-  color: #8c8c8c;
+  color: #666666;
   font-size: 17px;
   text-decoration: none;
 }

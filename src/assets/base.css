@@ -42,7 +42,7 @@ fieldset.form-fields {
   min-height: 44px;
   margin-top: 6px;
   padding: 10px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #767676;
   border-radius: 10px;
   background: white;
   color: #222;
@@ -75,7 +75,7 @@ fieldset.form-fields {
 }
 
 .secondary-button {
-  border-color: #ccc;
+  border-color: #767676;
   background: white;
   color: #222;
 }
@@ -121,4 +121,25 @@ fieldset.form-fields {
   .page-heading h1 {
     font-size: 27px;
   }
+}
+
+/* Keep keyboard focus visible, including links and scrollable table regions. */
+:focus-visible {
+  outline: 3px solid #005fcc;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  padding: 12px 16px;
+  background: white;
+  color: #222;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }

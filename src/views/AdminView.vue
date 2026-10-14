@@ -7,6 +7,7 @@ import { downloadCsv, downloadPdf } from '../services/exportService'
 import workshop from '../data/workshop.json'
 import BookingTable from '../components/BookingTable.vue'
 import StatisticsPanel from '../components/StatisticsPanel.vue'
+import EmailPanel from '../components/EmailPanel.vue'
 import { getBookings, cancelBooking, formatSessionDate } from '../services/bookingService'
 
 const reviews = ref([])
@@ -407,6 +408,10 @@ function removeReview(review) {
           Next
         </button>
       </nav>
+      <EmailPanel
+        :bookings="bookings"
+        :bookings-unavailable="bookingsLoading || Boolean(bookingsError)"
+      />
     </template>
     <p v-else>Please log in as an administrator to manage reviews.</p>
   </section>

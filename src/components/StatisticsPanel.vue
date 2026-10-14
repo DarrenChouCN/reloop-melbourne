@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import workshop from '../data/workshop.json'
+import { getRatingSummary } from '../services/reviewService'
 import { formatSessionDate, todayDate } from '../services/bookingService'
 
 const props = defineProps({
@@ -18,13 +19,7 @@ const upcomingPlaces = computed(() =>
     .filter((booking) => booking.sessionDate > todayDate())
     .reduce((sum, booking) => sum + booking.numberOfPlaces, 0),
 )
-const averageRating = computed(() =>
-  props.reviews.length
-    ? (
-        props.reviews.reduce((sum, review) => sum + review.rating, 0) / props.reviews.length
-      ).toFixed(1)
-    : 'No ratings',
-)
+const averageRating = computed(() => getRatingSummary(props.reviews).average ?? 'No ratings')
 const chartRows = computed(() =>
   workshop.sessions
     .filter((session) => period.value === 'all' || session.date > todayDate())

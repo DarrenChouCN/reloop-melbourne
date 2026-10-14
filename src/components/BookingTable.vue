@@ -21,8 +21,8 @@ watch(
 
 <template>
   <p v-if="!bookings.length" class="muted">No bookings to show.</p>
-  <div v-else class="booking-table" role="region" aria-label="Workshop bookings" tabindex="0">
-    <table>
+  <div v-else class="table-container" role="region" aria-label="Workshop bookings" tabindex="0">
+    <table class="data-table">
       <thead>
         <tr>
           <th scope="col">Date / time</th>
@@ -63,7 +63,7 @@ watch(
       </tbody>
     </table>
   </div>
-  <nav v-if="bookings.length > 10" class="booking-pages" aria-label="Booking pages">
+  <nav v-if="bookings.length > 10" class="table-controls booking-pages" aria-label="Booking pages">
     <button class="button secondary-button" type="button" :disabled="page === 1" @click="page--">
       Previous
     </button>
@@ -80,33 +80,12 @@ watch(
 </template>
 
 <style scoped>
-.booking-table {
-  overflow-x: auto;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th,
-td {
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-  vertical-align: top;
-}
-tbody th {
-  font-weight: normal;
-}
 small {
   display: block;
   max-width: 240px;
   overflow-wrap: anywhere;
 }
 .booking-pages {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   margin-top: 16px;
 }
 </style>

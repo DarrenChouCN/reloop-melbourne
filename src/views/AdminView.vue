@@ -75,7 +75,7 @@ async function removeBooking(booking) {
   bookingMessage.value = ''
   refreshSession()
   try {
-    bookings.value = await cancelBooking(booking.id)
+    await cancelBooking(booking.id)
     bookingMessage.value = 'Booking cancelled. The places are available again.'
   } catch (error) {
     bookingMessage.value = error.message
@@ -85,51 +85,42 @@ async function removeBooking(booking) {
   }
 }
 
+function loadReviews() {
+  try {
+    reviews.value = getReviews()
+    reviewsLoaded.value = true
+    errorMessage.value = ''
+  } catch {
+    reviewsLoaded.value = false
+    errorMessage.value = 'Reviews could not be loaded. Please check browser storage and try again.'
+  }
+}
+
 function onStorage(event) {
   if (event.key === 'reloop-bookings' || event.key === null) loadBookings()
-  if (event.key === 'reloop-reviews' || event.key === null) {
-    try {
-      reviews.value = getReviews()
-      reviewsLoaded.value = true
-      errorMessage.value = ''
-    } catch (error) {
-      reviewsLoaded.value = false
-      errorMessage.value = error.message
-    }
-  }
+  if (event.key === 'reloop-reviews' || event.key === null) loadReviews()
 }
 onMounted(() => {
   loadBookings()
   window.addEventListener('storage', onStorage)
 })
 onUnmounted(() => window.removeEventListener('storage', onStorage))
+loadReviews()
 
-try {
-  reviews.value = getReviews()
-  reviewsLoaded.value = true
-} catch {
-  errorMessage.value = 'Reviews could not be loaded. Please check browser storage and try again.'
-}
-
-function serviceName(serviceId) {
-  return services.find((service) => service.id === serviceId)?.name ?? 'Unknown service'
-}
-
-function formatDate(date) {
-  return new Date(date).toLocaleDateString('en-AU')
-}
-
-function getColumnValue(review, key) {
-  if (key === 'service') return serviceName(review.serviceId)
-  if (key === 'date') return formatDate(review.createdAt)
-  if (key === 'comment') return review.comment || 'No comment'
-  return review[key]
-}
+// Prepare display values once for filtering, the table and both export formats.
+const reviewRows = computed(() =>
+  reviews.value.map((review) => ({
+    ...review,
+    service: services.find((service) => service.id === review.serviceId)?.name ?? 'Unknown service',
+    comment: review.comment || 'No comment',
+    date: new Date(review.createdAt).toLocaleDateString('en-AU'),
+  })),
+)
 
 const filteredReviews = computed(() => {
-  const results = reviews.value.filter((review) =>
+  const results = reviewRows.value.filter((review) =>
     columns.every((column) => {
-      const value = getColumnValue(review, column.key)
+      const value = review[column.key]
       // Dates can be searched as displayed, or as YYYY-MM-DD.
       const text =
         column.key === 'date' ? `${value} ${review.createdAt.slice(0, 10)}` : String(value)
@@ -142,11 +133,9 @@ const filteredReviews = computed(() => {
       difference = Date.parse(first.createdAt) - Date.parse(second.createdAt)
     else if (sortKey.value === 'rating') difference = first.rating - second.rating
     else
-      difference = String(getColumnValue(first, sortKey.value)).localeCompare(
-        String(getColumnValue(second, sortKey.value)),
-        'en',
-        { sensitivity: 'base' },
-      )
+      difference = String(first[sortKey.value]).localeCompare(String(second[sortKey.value]), 'en', {
+        sensitivity: 'base',
+      })
     return sortAscending.value ? difference : -difference
   })
 })
@@ -164,13 +153,7 @@ async function exportTable(format) {
     exportError.value = 'Please log in as an administrator to export reviews.'
     return
   }
-  const rows = filteredReviews.value.map((review) => ({
-    service: serviceName(review.serviceId),
-    username: review.username,
-    rating: review.rating,
-    comment: getColumnValue(review, 'comment'),
-    date: formatDate(review.createdAt),
-  }))
+  const rows = filteredReviews.value
   if (!rows.length || exporting.value) return
   exporting.value = true
   try {
@@ -208,10 +191,7 @@ watch(pageCount, (count) => {
 function removeReview(review) {
   errorMessage.value = ''
   successMessage.value = ''
-  if (
-    !window.confirm(`Delete the review by ${review.username} for ${serviceName(review.serviceId)}?`)
-  )
-    return
+  if (!window.confirm(`Delete the review by ${review.username} for ${review.service}?`)) return
   refreshSession()
   try {
     reviews.value = deleteReview(review.id)
@@ -287,22 +267,16 @@ function removeReview(review) {
       </section>
       <h2>Review Management</h2>
       <p role="status">{{ filteredReviews.length }} of {{ reviews.length }} reviews</p>
-      <p>
+      <p class="export-actions">
         <button
+          v-for="format in ['csv', 'pdf']"
+          :key="format"
           class="button secondary-button"
           type="button"
           :disabled="exporting || !filteredReviews.length"
-          @click="exportTable('csv')"
+          @click="exportTable(format)"
         >
-          Export CSV
-        </button>
-        <button
-          class="button secondary-button"
-          type="button"
-          :disabled="exporting || !filteredReviews.length"
-          @click="exportTable('pdf')"
-        >
-          Export PDF
+          Export {{ format.toUpperCase() }}
         </button>
       </p>
       <p class="muted">
@@ -321,7 +295,7 @@ function removeReview(review) {
         aria-label="Review management"
         tabindex="0"
       >
-        <table>
+        <table class="data-table">
           <thead>
             <tr>
               <th
@@ -368,18 +342,18 @@ function removeReview(review) {
               </td>
             </tr>
             <tr v-for="review in pageReviews" :key="review.id">
-              <td>{{ serviceName(review.serviceId) }}</td>
+              <td>{{ review.service }}</td>
               <td>{{ review.username }}</td>
               <td>{{ review.rating }} / 5</td>
-              <td class="comment">{{ review.comment || 'No comment' }}</td>
+              <td class="comment">{{ review.comment }}</td>
               <td>
-                <time :datetime="review.createdAt">{{ formatDate(review.createdAt) }}</time>
+                <time :datetime="review.createdAt">{{ review.date }}</time>
               </td>
               <td>
                 <button
                   class="button secondary-button"
                   type="button"
-                  :aria-label="`Delete review by ${review.username} for ${serviceName(review.serviceId)}`"
+                  :aria-label="`Delete review by ${review.username} for ${review.service}`"
                   @click="removeReview(review)"
                 >
                   Delete
@@ -420,27 +394,6 @@ function removeReview(review) {
 <style scoped>
 .admin-page {
   line-height: 1.5;
-}
-.table-container {
-  overflow-x: auto;
-}
-.table-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th,
-td {
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-  vertical-align: top;
 }
 .comment {
   min-width: 180px;

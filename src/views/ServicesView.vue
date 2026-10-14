@@ -260,22 +260,16 @@ function formatDate(date) {
             below it to filter.
           </p>
           <p v-if="reviewError" class="error-message" role="alert">{{ reviewError }}</p>
-          <p>
+          <p class="export-actions">
             <button
+              v-for="format in ['csv', 'pdf']"
+              :key="format"
               class="button secondary-button"
               type="button"
               :disabled="exporting || !tableResults.length"
-              @click="exportTable('csv')"
+              @click="exportTable(format)"
             >
-              Export CSV
-            </button>
-            <button
-              class="button secondary-button"
-              type="button"
-              :disabled="exporting || !tableResults.length"
-              @click="exportTable('pdf')"
-            >
-              Export PDF
+              Export {{ format.toUpperCase() }}
             </button>
           </p>
           <p class="muted">
@@ -291,7 +285,7 @@ function formatDate(date) {
             aria-label="Service directory"
             tabindex="0"
           >
-            <table>
+            <table class="data-table">
               <thead>
                 <tr>
                   <th
@@ -550,24 +544,10 @@ h3 {
   font-weight: 500;
 }
 
-.table-container {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
+.data-table th,
+.data-table td {
   padding: 14px 12px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-}
-
-tbody th {
-  font-weight: 400;
+  vertical-align: middle;
 }
 
 .selected-row {
@@ -629,8 +609,8 @@ tbody th {
     flex-basis: 100%;
   }
 
-  th,
-  td {
+  .data-table th,
+  .data-table td {
     padding: 12px 8px;
   }
 }

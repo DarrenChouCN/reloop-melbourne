@@ -1,9 +1,13 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import services from '../data/services.json'
 import { getReviews, deleteReview } from '../services/reviewService'
 import { currentUser, refreshSession } from '../services/authService'
 import { downloadCsv, downloadPdf } from '../services/exportService'
+import workshop from '../data/workshop.json'
+import BookingTable from '../components/BookingTable.vue'
+import StatisticsPanel from '../components/StatisticsPanel.vue'
+import { getBookings, cancelBooking, formatSessionDate } from '../services/bookingService'
 
 const reviews = ref([])
 const errorMessage = ref('')
@@ -23,9 +27,85 @@ const pageSize = 10
 const exporting = ref(false)
 const exportError = ref('')
 const exportMessage = ref('')
+const reviewsLoaded = ref(false)
+const bookings = ref([])
+const bookingsError = ref('')
+const bookingMessage = ref('')
+const bookingsLoading = ref(true)
+const bookingsBusy = ref(false)
+const bookingDate = ref('')
+const bookingStatus = ref('confirmed')
+const filteredBookings = computed(() =>
+  bookings.value
+    .filter(
+      (booking) =>
+        (!bookingDate.value || booking.sessionDate === bookingDate.value) &&
+        (!bookingStatus.value || booking.status === bookingStatus.value),
+    )
+    .sort((first, second) => first.sessionDate.localeCompare(second.sessionDate)),
+)
+
+async function loadBookings() {
+  bookingsLoading.value = true
+  bookingsError.value = ''
+  try {
+    bookings.value = await getBookings()
+  } catch (error) {
+    bookingsError.value = error.message
+  } finally {
+    bookingsLoading.value = false
+  }
+}
+
+function selectBookingDate(date) {
+  bookingDate.value = date
+  bookingStatus.value = 'confirmed'
+}
+
+async function removeBooking(booking) {
+  if (
+    bookingsBusy.value ||
+    !window.confirm(
+      `Cancel ${booking.name}'s booking on ${formatSessionDate(booking.sessionDate)}?`,
+    )
+  )
+    return
+  bookingsBusy.value = true
+  bookingMessage.value = ''
+  refreshSession()
+  try {
+    bookings.value = await cancelBooking(booking.id)
+    bookingMessage.value = 'Booking cancelled. The places are available again.'
+  } catch (error) {
+    bookingMessage.value = error.message
+  } finally {
+    await loadBookings()
+    bookingsBusy.value = false
+  }
+}
+
+function onStorage(event) {
+  if (event.key === 'reloop-bookings' || event.key === null) loadBookings()
+  if (event.key === 'reloop-reviews' || event.key === null) {
+    try {
+      reviews.value = getReviews()
+      reviewsLoaded.value = true
+      errorMessage.value = ''
+    } catch (error) {
+      reviewsLoaded.value = false
+      errorMessage.value = error.message
+    }
+  }
+}
+onMounted(() => {
+  loadBookings()
+  window.addEventListener('storage', onStorage)
+})
+onUnmounted(() => window.removeEventListener('storage', onStorage))
 
 try {
   reviews.value = getReviews()
+  reviewsLoaded.value = true
 } catch {
   errorMessage.value = 'Reviews could not be loaded. Please check browser storage and try again.'
 }
@@ -144,14 +224,67 @@ function removeReview(review) {
 <template>
   <section class="admin-page page-container">
     <header class="page-heading">
-      <h1>Review Management</h1>
-      <p>View user reviews and remove inappropriate content.</p>
+      <h1>Admin Dashboard</h1>
+      <p>Manage workshop bookings, explore activity and review user feedback.</p>
     </header>
     <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
     <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
     <p v-if="exportError" class="error-message" role="alert">{{ exportError }}</p>
 
     <template v-if="currentUser?.role === 'admin'">
+      <StatisticsPanel
+        v-if="!bookingsLoading && !bookingsError"
+        :bookings="bookings"
+        :reviews="reviews"
+        :reviews-unavailable="!reviewsLoaded"
+        :selected-date="bookingDate"
+        @select-date="selectBookingDate"
+      />
+      <section aria-labelledby="booking-management-heading">
+        <h2 id="booking-management-heading">Booking Management</h2>
+        <div class="table-controls form-fields">
+          <label
+            >Session date<select v-model="bookingDate">
+              <option value="">All dates</option>
+              <option
+                v-for="session in workshop.sessions"
+                :key="session.date"
+                :value="session.date"
+              >
+                {{ formatSessionDate(session.date) }}
+              </option>
+            </select></label
+          >
+          <label
+            >Status<select v-model="bookingStatus">
+              <option value="">All statuses</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+            </select></label
+          >
+          <button
+            class="button secondary-button"
+            type="button"
+            :disabled="bookingsLoading || bookingsBusy"
+            @click="loadBookings"
+          >
+            Refresh bookings
+          </button>
+        </div>
+        <p v-if="bookingsLoading" role="status">Loading bookings…</p>
+        <p v-if="bookingsError" class="error-message" role="alert">{{ bookingsError }}</p>
+        <p v-if="bookingMessage" role="status">{{ bookingMessage }}</p>
+        <template v-if="!bookingsLoading && !bookingsError">
+          <p role="status">{{ filteredBookings.length }} bookings</p>
+          <BookingTable
+            :bookings="filteredBookings"
+            admin
+            :busy="bookingsBusy"
+            @cancel="removeBooking"
+          />
+        </template>
+      </section>
+      <h2>Review Management</h2>
       <p role="status">{{ filteredReviews.length }} of {{ reviews.length }} reviews</p>
       <p>
         <button

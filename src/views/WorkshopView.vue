@@ -1,11 +1,38 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-// Use local JSON to simulate workshop data returned by a backend API.
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import workshop from '../data/workshop.json'
+import BookingTable from '../components/BookingTable.vue'
+import { currentUser, refreshSession } from '../services/authService'
+import {
+  getBookings,
+  createBooking,
+  cancelBooking,
+  getRemainingPlaces,
+  isSessionOpen,
+  todayDate,
+  formatSessionDate,
+} from '../services/bookingService'
 
-const selectedDate = ref('2026-08-22')
-const days = Array.from({ length: 31 }, (_, index) => index + 1)
+const selectedDate = ref('')
+const month = ref(new Date(`${todayDate().slice(0, 7)}-01T12:00:00`))
+const monthLabel = computed(() =>
+  month.value.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }),
+)
+const days = computed(() =>
+  Array.from(
+    { length: new Date(month.value.getFullYear(), month.value.getMonth() + 1, 0).getDate() },
+    (_, index) => index + 1,
+  ),
+)
+const blankDays = computed(() => (month.value.getDay() + 6) % 7)
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+const bookings = ref([])
+const loading = ref(true)
+const busy = ref(false)
+const loadError = ref('')
+const errorMessage = ref('')
+const successMessage = ref('')
 
 const bookingForm = reactive({
   name: '',
@@ -14,26 +41,148 @@ const bookingForm = reactive({
   agreedToTerms: false,
 })
 
-// Match the selected calendar date with a workshop session from the JSON data.
 const selectedSession = computed(() => {
   return workshop.sessions.find((session) => session.date === selectedDate.value)
 })
+const remainingPlaces = computed(() =>
+  selectedSession.value ? getRemainingPlaces(selectedSession.value, bookings.value) : 0,
+)
+const myBookings = computed(() =>
+  bookings.value
+    .filter((booking) => booking.userId === currentUser.value?.id)
+    .sort((first, second) => second.sessionDate.localeCompare(first.sessionDate)),
+)
+const alreadyBooked = computed(() =>
+  myBookings.value.some(
+    (booking) => booking.sessionDate === selectedDate.value && booking.status === 'confirmed',
+  ),
+)
+const canBook = computed(
+  () =>
+    currentUser.value &&
+    isSessionOpen(selectedSession.value) &&
+    remainingPlaces.value > 0 &&
+    !alreadyBooked.value &&
+    !loading.value &&
+    !loadError.value &&
+    !busy.value,
+)
 
-function dateFor(day) {
-  return `2026-08-${String(day).padStart(2, '0')}`
+watch(
+  currentUser,
+  (user) => {
+    bookingForm.name = user?.username ?? ''
+    bookingForm.email = user?.email ?? ''
+  },
+  { immediate: true },
+)
+
+async function loadBookings() {
+  loading.value = true
+  loadError.value = ''
+  try {
+    bookings.value = await getBookings()
+    if (!selectedDate.value) {
+      const first = workshop.sessions.find(
+        (session) =>
+          session.date.startsWith(dateFor(1).slice(0, 7)) &&
+          isSessionOpen(session) &&
+          getRemainingPlaces(session, bookings.value) > 0,
+      )
+      if (first) {
+        selectedDate.value = first.date
+        month.value = new Date(`${first.date.slice(0, 7)}-01T12:00:00`)
+      }
+    }
+  } catch (error) {
+    loadError.value = error.message
+  } finally {
+    loading.value = false
+  }
 }
 
-// Check whether a date has an available session so the calendar can show a dot.
+function onStorage(event) {
+  if (event.key === 'reloop-bookings' || event.key === null) loadBookings()
+}
+onMounted(() => {
+  loadBookings()
+  window.addEventListener('storage', onStorage)
+  window.addEventListener('focus', loadBookings)
+})
+onUnmounted(() => {
+  window.removeEventListener('storage', onStorage)
+  window.removeEventListener('focus', loadBookings)
+})
+
+function dateFor(day) {
+  return `${month.value.getFullYear()}-${String(month.value.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
 function hasWorkshop(day) {
-  return workshop.sessions.some((session) => session.date === dateFor(day))
+  return workshop.sessions.find((session) => session.date === dateFor(day))
+}
+function availableDay(day) {
+  const session = hasWorkshop(day)
+  return (
+    !loading.value &&
+    !loadError.value &&
+    isSessionOpen(session) &&
+    getRemainingPlaces(session, bookings.value) > 0
+  )
+}
+function changeMonth(offset) {
+  month.value = new Date(month.value.getFullYear(), month.value.getMonth() + offset, 1, 12)
+  selectedDate.value = ''
+  bookingForm.agreedToTerms = false
+  errorMessage.value = ''
+  successMessage.value = ''
 }
 
 function selectDay(day) {
+  if (!availableDay(day)) return
   selectedDate.value = dateFor(day)
+  bookingForm.numberOfPlaces = 1
+  bookingForm.agreedToTerms = false
+  errorMessage.value = ''
+  successMessage.value = ''
 }
 
-function submitBooking() {
-  alert(`Booking confirmed for ${selectedSession.value.displayDate}.`)
+async function submitBooking() {
+  if (busy.value) return
+  busy.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+  refreshSession()
+  try {
+    const booking = await createBooking(selectedDate.value, bookingForm)
+    successMessage.value = `Booking confirmed for ${formatSessionDate(booking.sessionDate)}. Reference: ${booking.id}`
+    bookingForm.agreedToTerms = false
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    await loadBookings()
+    busy.value = false
+  }
+}
+
+async function removeBooking(booking) {
+  if (
+    busy.value ||
+    !window.confirm(`Cancel your booking on ${formatSessionDate(booking.sessionDate)}?`)
+  )
+    return
+  busy.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+  refreshSession()
+  try {
+    await cancelBooking(booking.id)
+    successMessage.value = 'Booking cancelled. The places are available again.'
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    await loadBookings()
+    busy.value = false
+  }
 }
 </script>
 
@@ -53,7 +202,7 @@ function submitBooking() {
           <div class="session-information">
             <div>
               <span>Date</span>
-              <p>{{ selectedSession.displayDate }}</p>
+              <p>{{ formatSessionDate(selectedSession.date) }}</p>
             </div>
             <div>
               <span>Time</span>
@@ -65,7 +214,7 @@ function submitBooking() {
             </div>
             <div>
               <span>Places</span>
-              <p>{{ selectedSession.remainingPlaces }} remaining</p>
+              <p>{{ loading || loadError ? 'Unavailable' : `${remainingPlaces} remaining` }}</p>
             </div>
           </div>
 
@@ -84,7 +233,7 @@ function submitBooking() {
 
         <div v-else class="unavailable">
           <h2>No workshop available</h2>
-          <p>Please choose a date marked with a dot.</p>
+          <p>Choose an available date marked with a dot. You can move to another month.</p>
         </div>
       </section>
 
@@ -92,7 +241,25 @@ function submitBooking() {
         <h2>Book this workshop</h2>
 
         <div class="calendar">
-          <h3>August 2026</h3>
+          <div class="calendar-heading">
+            <button
+              class="button secondary-button"
+              type="button"
+              aria-label="Previous month"
+              @click="changeMonth(-1)"
+            >
+              ‹
+            </button>
+            <h3 aria-live="polite">{{ monthLabel }}</h3>
+            <button
+              class="button secondary-button"
+              type="button"
+              aria-label="Next month"
+              @click="changeMonth(1)"
+            >
+              ›
+            </button>
+          </div>
 
           <div class="calendar-grid week-days">
             <span v-for="(weekDay, index) in weekDays" :key="index">
@@ -101,7 +268,7 @@ function submitBooking() {
           </div>
 
           <div class="calendar-grid">
-            <span v-for="blank in 5" :key="`blank-${blank}`"></span>
+            <span v-for="blank in blankDays" :key="`blank-${blank}`"></span>
 
             <button
               v-for="day in days"
@@ -109,13 +276,33 @@ function submitBooking() {
               type="button"
               class="calendar-day"
               :class="{ selected: selectedDate === dateFor(day) }"
+              :disabled="!availableDay(day) || busy"
+              :aria-pressed="selectedDate === dateFor(day)"
+              :aria-label="`${formatSessionDate(dateFor(day))}: ${availableDay(day) ? 'available' : 'unavailable'}`"
               @click="selectDay(day)"
             >
               {{ day }}
-              <i v-if="hasWorkshop(day)"></i>
+              <i v-if="hasWorkshop(day)" aria-hidden="true"></i>
             </button>
           </div>
         </div>
+        <p class="muted">
+          Up to 4 places per booking. Booking and cancellation close the day before the workshop
+          (Melbourne time). Unavailable and full dates are disabled.
+        </p>
+        <p v-if="!currentUser">
+          Please
+          <RouterLink :to="{ path: '/login', query: { redirect: '/workshops/basic-repair' } }"
+            >log in</RouterLink
+          >
+          to book.
+        </p>
+        <p v-if="alreadyBooked" role="status">
+          You already have a booking for this date. See My bookings below.
+        </p>
+        <p v-if="loadError" class="error-message" role="alert">{{ loadError }}</p>
+        <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
+        <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
 
         <!-- Use native validation for required fields, email format and booking limits. -->
         <form class="booking-form form-fields" @submit.prevent="submitBooking">
@@ -125,8 +312,10 @@ function submitBooking() {
               v-model="bookingForm.name"
               type="text"
               placeholder="Your name"
+              minlength="2"
+              maxlength="80"
               required
-              :disabled="!selectedSession"
+              :disabled="!canBook"
             />
           </label>
 
@@ -136,8 +325,9 @@ function submitBooking() {
               v-model="bookingForm.email"
               type="email"
               placeholder="name@example.com"
+              maxlength="254"
               required
-              :disabled="!selectedSession"
+              :disabled="!canBook"
             />
           </label>
 
@@ -147,9 +337,9 @@ function submitBooking() {
               v-model.number="bookingForm.numberOfPlaces"
               type="number"
               min="1"
-              :max="selectedSession ? selectedSession.remainingPlaces : 1"
+              :max="Math.min(4, remainingPlaces)"
               required
-              :disabled="!selectedSession"
+              :disabled="!canBook"
             />
           </label>
 
@@ -158,19 +348,59 @@ function submitBooking() {
               v-model="bookingForm.agreedToTerms"
               type="checkbox"
               required
-              :disabled="!selectedSession"
+              :disabled="!canBook"
             />
             I agree to the booking terms.
           </label>
 
-          <button class="button" type="submit" :disabled="!selectedSession">Book Workshop</button>
+          <button class="button" type="submit" :disabled="!canBook">
+            {{ busy ? 'Saving…' : 'Book Workshop' }}
+          </button>
         </form>
       </aside>
     </div>
+    <section class="my-bookings" aria-labelledby="my-bookings-heading">
+      <h2 id="my-bookings-heading">My bookings</h2>
+      <button
+        class="button secondary-button"
+        type="button"
+        :disabled="loading || busy"
+        @click="loadBookings"
+      >
+        Refresh bookings
+      </button>
+      <p v-if="loading" role="status">Loading bookings…</p>
+      <p v-else-if="!currentUser">Log in to see your bookings.</p>
+      <BookingTable
+        v-else-if="!loadError"
+        :bookings="myBookings"
+        :busy="busy"
+        @cancel="removeBooking"
+      />
+    </section>
   </div>
 </template>
 
 <style scoped>
+.calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.calendar-heading h3 {
+  margin: 0;
+}
+.calendar-day:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.my-bookings {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
 .workshop-layout {
   display: grid;
   grid-template-columns: 1.15fr 0.9fr;

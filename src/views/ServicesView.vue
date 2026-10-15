@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import services from '../data/services.json'
 import { getRatingSummary, getReviews, saveReview } from '../services/reviewService'
@@ -9,6 +9,9 @@ import { downloadCsv, downloadPdf } from '../services/exportService'
 const selectedServiceId = ref(null)
 const reviews = ref([])
 const reviewError = ref('')
+const reviewsLoading = ref(true)
+let reviewLoadId = 0
+const submitting = ref(false)
 const submitError = ref('')
 const submitMessage = ref('')
 const reviewForm = reactive({ rating: '', comment: '', hasUsedService: false })
@@ -60,11 +63,31 @@ watch(
   { immediate: true },
 )
 
-try {
-  reviews.value = getReviews()
-} catch {
-  reviewError.value = 'Reviews could not be loaded. Please check browser storage and try again.'
+async function loadReviews() {
+  const requestId = ++reviewLoadId
+  reviewsLoading.value = true
+  reviewError.value = ''
+  try {
+    const loaded = await getReviews()
+    if (requestId !== reviewLoadId) return
+    reviews.value = loaded
+  } catch {
+    if (requestId !== reviewLoadId) return
+    reviews.value = []
+    reviewError.value =
+      'Reviews could not be loaded. Check your connection and Firestore setup, then refresh.'
+  } finally {
+    if (requestId === reviewLoadId) reviewsLoading.value = false
+  }
 }
+onMounted(() => {
+  loadReviews()
+  window.addEventListener('focus', loadReviews)
+})
+onUnmounted(() => {
+  reviewLoadId++
+  window.removeEventListener('focus', loadReviews)
+})
 
 const serviceDirectory = computed(() => {
   return services
@@ -85,10 +108,11 @@ const serviceDirectory = computed(() => {
 
 function getColumnValue(service, key) {
   if (key === 'rating') {
-    if (reviewError.value) return 'Unavailable'
+    if (reviewError.value || reviewsLoading.value) return 'Unavailable'
     return service.summary.count ? service.summary.average : 'No ratings yet'
   }
-  if (key === 'reviews') return reviewError.value ? 'Unavailable' : service.summary.count
+  if (key === 'reviews')
+    return reviewError.value || reviewsLoading.value ? 'Unavailable' : service.summary.count
   return service[key]
 }
 
@@ -185,20 +209,27 @@ watch([selectedServiceId, () => currentUser.value?.id], () => {
   submitMessage.value = ''
 })
 
-function submitReview() {
+async function submitReview() {
+  if (submitting.value) return
+  submitting.value = true
+  const serviceId = selectedServiceId.value
   submitError.value = ''
   submitMessage.value = ''
   refreshSession()
   const updating = Boolean(myReview.value)
   try {
-    reviews.value = saveReview(selectedServiceId.value, reviewForm)
-    reviewForm.comment = myReview.value.comment
+    await saveReview(serviceId, { ...reviewForm })
+    await loadReviews()
+    if (selectedServiceId.value !== serviceId) return
+    reviewForm.comment = reviewForm.comment.trim()
     reviewForm.hasUsedService = false
     submitMessage.value = updating
       ? 'Your review has been updated.'
       : 'Your review has been submitted.'
   } catch (error) {
     submitError.value = error.message
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -256,9 +287,10 @@ function formatDate(date) {
             >
           </div>
           <p class="muted">
-            Sample services and reviews for demonstration. Click a column heading to sort, or type
-            below it to filter.
+            Demonstration service listings with shared reviews. Click a column heading to sort, or
+            type below it to filter.
           </p>
+          <p v-if="reviewsLoading" role="status">Loading reviews…</p>
           <p v-if="reviewError" class="error-message" role="alert">{{ reviewError }}</p>
           <p class="export-actions">
             <button
@@ -266,7 +298,7 @@ function formatDate(date) {
               :key="format"
               class="button secondary-button"
               type="button"
-              :disabled="exporting || !tableResults.length"
+              :disabled="exporting || reviewsLoading || !tableResults.length"
               @click="exportTable(format)"
             >
               Export {{ format.toUpperCase() }}
@@ -299,7 +331,10 @@ function formatDate(date) {
                     <button
                       class="button view-button"
                       type="button"
-                      :disabled="Boolean(reviewError) && ['rating', 'reviews'].includes(column.key)"
+                      :disabled="
+                        (Boolean(reviewError) || reviewsLoading) &&
+                        ['rating', 'reviews'].includes(column.key)
+                      "
                       @click="sortServices(column.key)"
                     >
                       {{ column.label }}
@@ -317,7 +352,10 @@ function formatDate(date) {
                       type="search"
                       :aria-label="`Filter by ${column.label.toLowerCase()}`"
                       :placeholder="`Filter ${column.label.toLowerCase()}`"
-                      :disabled="Boolean(reviewError) && ['rating', 'reviews'].includes(column.key)"
+                      :disabled="
+                        (Boolean(reviewError) || reviewsLoading) &&
+                        ['rating', 'reviews'].includes(column.key)
+                      "
                     />
                   </td>
                   <td>
@@ -340,16 +378,17 @@ function formatDate(date) {
                   <td>{{ service.type }}</td>
                   <td>{{ service.suburb }}</td>
                   <td>
-                    <template v-if="reviewError">Unavailable</template>
+                    <template v-if="reviewError || reviewsLoading">Unavailable</template>
                     <template v-else-if="service.summary.count"
                       >{{ service.summary.average }} / 5</template
                     >
                     <template v-else>No ratings yet</template>
                   </td>
-                  <td>{{ reviewError ? '—' : service.summary.count }}</td>
+                  <td>{{ reviewError || reviewsLoading ? '—' : service.summary.count }}</td>
                   <td>
                     <button
                       class="button view-button"
+                      :disabled="reviewsLoading"
                       type="button"
                       :aria-label="`${selectedServiceId === service.id ? 'Hide' : 'View'} reviews for ${service.name}`"
                       :aria-expanded="selectedServiceId === service.id"
@@ -396,7 +435,7 @@ function formatDate(date) {
           <template v-if="selectedService">
             <h2 id="reviews-heading">{{ selectedService.name }}</h2>
             <p>{{ selectedService.description }}</p>
-            <p v-if="!reviewError" class="rating-summary" aria-live="polite">
+            <p v-if="!reviewError && !reviewsLoading" class="rating-summary" aria-live="polite">
               <template v-if="selectedService.summary.count">
                 {{ selectedService.summary.average }} / 5 · {{ selectedService.summary.count }}
                 {{ selectedService.summary.count === 1 ? 'review' : 'reviews' }}
@@ -405,7 +444,8 @@ function formatDate(date) {
             </p>
 
             <h3>User reviews</h3>
-            <p v-if="reviewError">Reviews are currently unavailable.</p>
+            <p v-if="reviewsLoading">Loading reviews…</p>
+            <p v-else-if="reviewError">Reviews are currently unavailable.</p>
             <p v-else-if="selectedReviews.length === 0" class="muted">
               No reviews yet for this service.
             </p>
@@ -437,7 +477,7 @@ function formatDate(date) {
             <p v-if="submitMessage" class="success-message" role="status">{{ submitMessage }}</p>
             <form class="review-form form-fields" @submit.prevent="submitReview">
               <fieldset
-                :disabled="!currentUser || Boolean(reviewError)"
+                :disabled="!currentUser || Boolean(reviewError) || reviewsLoading || submitting"
                 aria-describedby="login-note"
               >
                 <legend class="visually-hidden">Your review</legend>

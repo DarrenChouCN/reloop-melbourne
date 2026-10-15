@@ -1,49 +1,25 @@
-import sampleReviews from '../data/reviews.json'
+import {
+  collection,
+  doc,
+  getDocsFromServer,
+  deleteDoc,
+  runTransaction,
+  serverTimestamp,
+} from 'firebase/firestore'
 import services from '../data/services.json'
+import { getDatabase } from './firebase'
 import { getCurrentUser } from './authService'
 
-const storageKey = 'reloop-reviews'
-
-// Seed once. An empty saved array means the reviews were removed, not a first visit.
-export function getReviews() {
-  const savedReviews = localStorage.getItem(storageKey)
-
-  if (savedReviews === null) {
-    localStorage.setItem(storageKey, JSON.stringify(sampleReviews))
-    return structuredClone(sampleReviews)
-  }
-
-  const reviews = JSON.parse(savedReviews)
-  if (!Array.isArray(reviews) || !reviews.every(isValidReview)) {
-    throw new Error('Saved reviews could not be read.')
-  }
-
-  return reviews
+export async function getReviews() {
+  const snapshot = await getDocsFromServer(collection(getDatabase(), 'reviews'))
+  return snapshot.docs.map((entry) => ({
+    ...entry.data(),
+    id: entry.id,
+    createdAt: entry.data().createdAt.toDate().toISOString(),
+  }))
 }
 
-function isValidReview(review) {
-  return (
-    review &&
-    typeof review.id === 'string' &&
-    typeof review.serviceId === 'string' &&
-    typeof review.userId === 'string' &&
-    Number.isInteger(review.rating) &&
-    review.rating >= 1 &&
-    review.rating <= 5 &&
-    typeof review.comment === 'string'
-  )
-}
-
-function saveReviews(reviews) {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(reviews))
-    return reviews
-  } catch {
-    throw new Error('Changes could not be saved. Please check browser storage and try again.')
-  }
-}
-
-export function saveReview(serviceId, { rating, comment, hasUsedService }) {
+export async function saveReview(serviceId, { rating, comment, hasUsedService }) {
   const user = getCurrentUser()
   if (!user) throw new Error('Please log in to submit a review.')
   if (!services.some((service) => service.id === serviceId)) {
@@ -57,36 +33,26 @@ export function saveReview(serviceId, { rating, comment, hasUsedService }) {
   }
   if (hasUsedService !== true) throw new Error('Please confirm that you have used this service.')
 
-  const reviews = getReviews()
-  const existing = reviews.find(
-    (review) => review.serviceId === serviceId && review.userId === user.id,
-  )
-  const now = new Date().toISOString()
-  // Identity comes from the current account, never from the submitted form.
-  const review = {
-    id: existing ? existing.id : crypto.randomUUID(),
-    serviceId,
-    userId: user.id,
-    username: user.username,
-    rating,
-    comment: comment.trim(),
-    createdAt: existing ? existing.createdAt : now,
-    updatedAt: now,
-  }
-  if (existing) Object.assign(existing, review)
-  else reviews.push(review)
-  return saveReviews(reviews)
+  const db = getDatabase()
+  const reference = doc(db, 'reviews', `${serviceId}_${user.id}`)
+  await runTransaction(db, async (transaction) => {
+    const existing = await transaction.get(reference)
+    transaction.set(reference, {
+      serviceId,
+      userId: user.id,
+      username: user.username,
+      rating,
+      comment: comment.trim(),
+      hasUsedService: true,
+      createdAt: existing.exists() ? existing.data().createdAt : serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+  })
 }
 
-export function deleteReview(reviewId) {
-  if (getCurrentUser()?.role !== 'admin') {
-    throw new Error('Only administrators can delete reviews.')
-  }
-  const reviews = getReviews()
-  if (!reviews.some((review) => review.id === reviewId)) {
-    throw new Error('This review no longer exists. Please refresh the page.')
-  }
-  return saveReviews(reviews.filter((review) => review.id !== reviewId))
+export async function deleteReview(reviewId) {
+  if (getCurrentUser()?.role !== 'admin') throw new Error('Only administrators can delete reviews.')
+  await deleteDoc(doc(getDatabase(), 'reviews', reviewId))
 }
 
 // Both the directory and the selected service use the same calculation.

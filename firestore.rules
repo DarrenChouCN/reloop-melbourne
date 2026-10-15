@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && request.auth.token.get('admin', false) == true; }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      // Catalog data is maintained by the trusted seed script.
+    }
+
+    match /reviews/{reviewId} {
+      function validReview() {
+        let r = request.resource.data;
+        return signedIn()
+          && r.keys().hasOnly(['serviceId', 'userId', 'username', 'rating', 'comment', 'hasUsedService', 'createdAt', 'updatedAt'])
+          && r.userId == request.auth.uid
+          && reviewId == r.serviceId + '_' + request.auth.uid
+          && exists(/databases/$(database)/documents/services/$(r.serviceId))
+          && r.username is string && r.username.size() > 0 && r.username.size() <= 254
+          && r.rating is int && r.rating >= 1 && r.rating <= 5
+          && r.comment is string && r.comment.size() <= 500
+          && r.hasUsedService == true && r.updatedAt == request.time;
+      }
+      allow read: if true;
+      allow create: if validReview() && request.resource.data.createdAt == request.time;
+      allow update: if validReview() && resource.data.userId == request.auth.uid
+        && request.resource.data.serviceId == resource.data.serviceId
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if admin();
+    }
+
+    match /sessions/{date} {
+      // Public availability only; contact details live in private booking documents.
+      allow read: if true;
+      function bookingAdded(id, after) {
+        let path = /databases/$(database)/documents/bookings/$(id);
+        return after.status == 'confirmed'
+          && (!exists(path) || get(path).data.status == 'cancelled')
+          && request.resource.data.bookedPlaces == resource.data.bookedPlaces + after.numberOfPlaces;
+      }
+      function bookingCancelled(id, after) {
+        let before = get(/databases/$(database)/documents/bookings/$(id)).data;
+        return before.status == 'confirmed' && after.status == 'cancelled'
+          && request.resource.data.bookedPlaces == resource.data.bookedPlaces - before.numberOfPlaces;
+      }
+      function validCounterUpdate() {
+        let s = request.resource.data;
+        let after = getAfter(/databases/$(database)/documents/bookings/$(s.lastBookingId)).data;
+        return signedIn() && request.time < resource.data.bookingClosesAt
+          && s.diff(resource.data).affectedKeys().hasOnly(['bookedPlaces', 'lastBookingId'])
+          && s.bookedPlaces is int && s.bookedPlaces >= 0 && s.bookedPlaces <= s.capacity
+          && after.sessionDate == date
+          && (bookingAdded(s.lastBookingId, after) || bookingCancelled(s.lastBookingId, after));
+      }
+      allow update: if validCounterUpdate();
+    }
+
+    match /bookings/{bookingId} {
+      function validBooking() {
+        let b = request.resource.data;
+        let s = get(/databases/$(database)/documents/sessions/$(b.sessionDate)).data;
+        return b.keys().hasOnly(['workshopId', 'userId', 'sessionDate', 'time', 'location', 'name', 'email', 'numberOfPlaces', 'agreedToTerms', 'status', 'createdAt', 'updatedAt'])
+          && b.workshopId == 'basic-repair'
+          && bookingId == b.sessionDate + '_' + b.userId
+          && b.time == s.time && b.location == s.location
+          && b.name is string && b.name.size() >= 2 && b.name.size() <= 80
+          && b.email is string && b.email.size() <= 254 && b.email.matches('^[^\\s@]+@[^\\s@]+[.][^\\s@]+$')
+          && b.numberOfPlaces is int && b.numberOfPlaces >= 1 && b.numberOfPlaces <= 4
+          && b.agreedToTerms == true && b.updatedAt == request.time
+          && request.time < s.bookingClosesAt;
+      }
+      // Require both documents to change together, with the exact matching delta.
+      function matchingCounter(delta) {
+        let date = request.resource.data.sessionDate;
+        let before = get(/databases/$(database)/documents/sessions/$(date)).data;
+        let after = getAfter(/databases/$(database)/documents/sessions/$(date)).data;
+        return after.lastBookingId == bookingId
+          && after.bookedPlaces == before.bookedPlaces + delta;
+      }
+      allow read: if signedIn() && (admin() || resource.data.userId == request.auth.uid);
+      // Transactions may read the user's own deterministic ID before it exists.
+      allow get: if signedIn() && bookingId == bookingId.split('_')[0] + '_' + request.auth.uid;
+      allow create: if signedIn() && validBooking() && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'confirmed'
+        && request.resource.data.createdAt == request.time
+        && matchingCounter(request.resource.data.numberOfPlaces);
+      allow update: if signedIn() && validBooking()
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.sessionDate == resource.data.sessionDate
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (
+          (resource.data.status == 'cancelled' && request.resource.data.status == 'confirmed'
+            && resource.data.userId == request.auth.uid
+            && matchingCounter(request.resource.data.numberOfPlaces))
+          || (resource.data.status == 'confirmed' && request.resource.data.status == 'cancelled'
+            && (admin() || resource.data.userId == request.auth.uid)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+            && matchingCounter(-resource.data.numberOfPlaces))
+        );
+    }
+    // Everything else is denied, including direct client deletion of bookings.
+  }
+}

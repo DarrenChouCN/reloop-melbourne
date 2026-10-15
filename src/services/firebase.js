@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -9,13 +10,21 @@ const config = {
 }
 
 export let auth = null
+let db = null
 export let firebaseError = ''
 try {
   if (Object.values(config).some((value) => !value)) {
     throw new Error('Missing Firebase configuration')
   }
-  auth = getAuth(initializeApp(config))
+  const app = initializeApp(config)
+  auth = getAuth(app)
+  db = getFirestore(app)
 } catch {
   firebaseError =
     'Firebase is not configured. Fill in .env.local and restart the development server.'
+}
+
+export function getDatabase() {
+  if (!db) throw new Error(firebaseError)
+  return db
 }

@@ -23,10 +23,10 @@ const pages = {
   privacy: {
     title: 'Privacy',
     paragraphs: [
-      'Firebase Authentication manages your account, display name and sign-in credentials. Firebase stores the login session in this browser tab; refreshing keeps you signed in, while closing the tab ends the session. Reviews and workshop bookings are still stored locally during this stage.',
-      'Anyone using the same browser profile may be able to inspect local reviews and bookings. Use test details. Clearing site data removes local data and signs you out, but does not delete your Firebase account. Demo reviews are recreated when next needed. Older local accounts are no longer used.',
+      'Firebase Authentication manages your account, display name and sign-in credentials. Firebase stores the login session in this browser tab; refreshing keeps you signed in, while closing the tab ends the session. Firestore stores your reviews and workshop bookings. Reviews and display names are public; booking contact details are accessible to the account owner and administrators.',
+      'Use test details for this coursework demonstration. Clearing browser data signs you out but does not delete your Firebase account, cloud reviews or bookings. Older local accounts, reviews and bookings are no longer read or automatically uploaded.',
       'Email text and attachments are held in page memory for preview only. They are not sent or saved to browser storage. Leaving or reloading the page clears them. CSV and PDF exports remain in your downloads until you delete them.',
-      'This notice describes the Authentication integration stage. It must be updated when cloud data storage, maps and real email delivery are enabled.',
+      'Email delivery and map integration are not enabled yet. This notice will be updated when those services are connected.',
     ],
   },
 }

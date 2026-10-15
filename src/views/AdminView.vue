@@ -29,6 +29,8 @@ const exporting = ref(false)
 const exportError = ref('')
 const exportMessage = ref('')
 const reviewsLoaded = ref(false)
+let reviewLoadId = 0
+const deletingReview = ref(false)
 const bookings = ref([])
 const bookingsError = ref('')
 const bookingMessage = ref('')
@@ -85,27 +87,36 @@ async function removeBooking(booking) {
   }
 }
 
-function loadReviews() {
+async function loadReviews() {
+  const requestId = ++reviewLoadId
+  reviewsLoaded.value = false
   try {
-    reviews.value = getReviews()
+    const loaded = await getReviews()
+    if (requestId !== reviewLoadId) return
+    reviews.value = loaded
     reviewsLoaded.value = true
     errorMessage.value = ''
   } catch {
+    if (requestId !== reviewLoadId) return
+    reviews.value = []
     reviewsLoaded.value = false
-    errorMessage.value = 'Reviews could not be loaded. Please check browser storage and try again.'
+    errorMessage.value =
+      'Reviews could not be loaded. Check your connection and Firestore setup, then refresh.'
   }
 }
 
-function onStorage(event) {
-  if (event.key === 'reloop-bookings' || event.key === null) loadBookings()
-  if (event.key === 'reloop-reviews' || event.key === null) loadReviews()
+function refreshData() {
+  loadBookings()
+  loadReviews()
 }
 onMounted(() => {
-  loadBookings()
-  window.addEventListener('storage', onStorage)
+  refreshData()
+  window.addEventListener('focus', refreshData)
 })
-onUnmounted(() => window.removeEventListener('storage', onStorage))
-loadReviews()
+onUnmounted(() => {
+  reviewLoadId++
+  window.removeEventListener('focus', refreshData)
+})
 
 // Prepare display values once for filtering, the table and both export formats.
 const reviewRows = computed(() =>
@@ -188,16 +199,21 @@ watch(pageCount, (count) => {
   currentPage.value = Math.min(currentPage.value, count)
 })
 
-function removeReview(review) {
+async function removeReview(review) {
+  if (deletingReview.value) return
   errorMessage.value = ''
   successMessage.value = ''
   if (!window.confirm(`Delete the review by ${review.username} for ${review.service}?`)) return
+  deletingReview.value = true
   refreshSession()
   try {
-    reviews.value = deleteReview(review.id)
+    await deleteReview(review.id)
+    await loadReviews()
     successMessage.value = 'Review deleted. The service rating has been updated.'
   } catch (error) {
     errorMessage.value = error.message
+  } finally {
+    deletingReview.value = false
   }
 }
 </script>
@@ -266,6 +282,7 @@ function removeReview(review) {
         </template>
       </section>
       <h2>Review Management</h2>
+      <p v-if="!reviewsLoaded && !errorMessage" role="status">Loading reviews…</p>
       <p role="status">{{ filteredReviews.length }} of {{ reviews.length }} reviews</p>
       <p class="export-actions">
         <button
@@ -273,7 +290,7 @@ function removeReview(review) {
           :key="format"
           class="button secondary-button"
           type="button"
-          :disabled="exporting || !filteredReviews.length"
+          :disabled="exporting || !reviewsLoaded || !filteredReviews.length"
           @click="exportTable(format)"
         >
           Export {{ format.toUpperCase() }}
@@ -353,6 +370,7 @@ function removeReview(review) {
                 <button
                   class="button secondary-button"
                   type="button"
+                  :disabled="deletingReview"
                   :aria-label="`Delete review by ${review.username} for ${review.service}`"
                   @click="removeReview(review)"
                 >

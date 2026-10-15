@@ -6,6 +6,7 @@ import BookingTable from '../components/BookingTable.vue'
 import { currentUser, refreshSession } from '../services/authService'
 import {
   getBookings,
+  getSessions,
   createBooking,
   cancelBooking,
   getRemainingPlaces,
@@ -28,6 +29,8 @@ const days = computed(() =>
 const blankDays = computed(() => (month.value.getDay() + 6) % 7)
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const bookings = ref([])
+const sessions = ref([])
+let loadId = 0
 const loading = ref(true)
 const busy = ref(false)
 const loadError = ref('')
@@ -42,10 +45,10 @@ const bookingForm = reactive({
 })
 
 const selectedSession = computed(() => {
-  return workshop.sessions.find((session) => session.date === selectedDate.value)
+  return sessions.value.find((session) => session.date === selectedDate.value)
 })
 const remainingPlaces = computed(() =>
-  selectedSession.value ? getRemainingPlaces(selectedSession.value, bookings.value) : 0,
+  selectedSession.value ? getRemainingPlaces(selectedSession.value) : 0,
 )
 const myBookings = computed(() =>
   bookings.value
@@ -78,16 +81,20 @@ watch(
 )
 
 async function loadBookings() {
+  const requestId = ++loadId
   loading.value = true
   loadError.value = ''
   try {
-    bookings.value = await getBookings()
+    const [availableSessions, userBookings] = await Promise.all([getSessions(), getBookings()])
+    if (requestId !== loadId) return
+    sessions.value = availableSessions
+    bookings.value = userBookings
     if (!selectedDate.value) {
-      const first = workshop.sessions.find(
+      const first = sessions.value.find(
         (session) =>
           session.date.startsWith(dateFor(1).slice(0, 7)) &&
           isSessionOpen(session) &&
-          getRemainingPlaces(session, bookings.value) > 0,
+          getRemainingPlaces(session) > 0,
       )
       if (first) {
         selectedDate.value = first.date
@@ -95,22 +102,25 @@ async function loadBookings() {
       }
     }
   } catch (error) {
-    loadError.value = error.message
+    if (requestId === loadId) loadError.value = error.message
   } finally {
-    loading.value = false
+    if (requestId === loadId) loading.value = false
   }
 }
 
-function onStorage(event) {
-  if (event.key === 'reloop-bookings' || event.key === null) loadBookings()
-}
+watch(
+  () => currentUser.value?.id,
+  () => {
+    bookings.value = []
+    loadBookings()
+  },
+)
 onMounted(() => {
   loadBookings()
-  window.addEventListener('storage', onStorage)
   window.addEventListener('focus', loadBookings)
 })
 onUnmounted(() => {
-  window.removeEventListener('storage', onStorage)
+  loadId++
   window.removeEventListener('focus', loadBookings)
 })
 
@@ -118,15 +128,12 @@ function dateFor(day) {
   return `${month.value.getFullYear()}-${String(month.value.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 function hasWorkshop(day) {
-  return workshop.sessions.find((session) => session.date === dateFor(day))
+  return sessions.value.find((session) => session.date === dateFor(day))
 }
 function availableDay(day) {
   const session = hasWorkshop(day)
   return (
-    !loading.value &&
-    !loadError.value &&
-    isSessionOpen(session) &&
-    getRemainingPlaces(session, bookings.value) > 0
+    !loading.value && !loadError.value && isSessionOpen(session) && getRemainingPlaces(session) > 0
   )
 }
 function changeMonth(offset) {

@@ -1,21 +1,19 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { currentUser, login, register } from '../services/authService'
+import { authError, currentUser, login, register } from '../services/authService'
 
 const router = useRouter()
 const route = useRoute()
 const isRegister = ref(false)
 const busy = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
 const passwordError = ref('')
 const form = reactive({ username: '', email: '', password: '', confirmPassword: '' })
 
 function changeMode(registerMode) {
   isRegister.value = registerMode
   errorMessage.value = ''
-  successMessage.value = ''
   passwordError.value = ''
   form.password = ''
   form.confirmPassword = ''
@@ -24,7 +22,6 @@ function changeMode(registerMode) {
 async function submitForm() {
   if (busy.value) return
   errorMessage.value = ''
-  successMessage.value = ''
   passwordError.value = ''
   if (isRegister.value && form.password !== form.confirmPassword) {
     passwordError.value = 'Passwords do not match.'
@@ -32,21 +29,15 @@ async function submitForm() {
   }
   busy.value = true
   try {
-    if (isRegister.value) {
-      await register(form)
-      changeMode(false)
-      successMessage.value = 'Account created. Please log in with your email and password.'
-    } else {
-      const user = await login(form.email, form.password)
-      form.password = ''
-      // Accept only known app destinations, never an external redirect URL.
-      const destinations = ['/services', '/workshops/basic-repair', '/admin']
-      const requested = route.query.redirect
-      let destination = '/services'
-      if (user.role === 'admin') destination = '/admin'
-      if (destinations.includes(requested)) destination = requested
-      await router.replace(destination)
-    }
+    const user = isRegister.value ? await register(form) : await login(form.email, form.password)
+    form.password = ''
+    form.confirmPassword = ''
+    // Accept only known app destinations, never an external redirect URL.
+    const destinations = ['/services', '/workshops/basic-repair', '/admin']
+    const requested = route.query.redirect
+    let destination = user.role === 'admin' ? '/admin' : '/services'
+    if (destinations.includes(requested)) destination = requested
+    await router.replace(destination)
   } catch (error) {
     errorMessage.value = error.message
     form.password = ''
@@ -59,7 +50,10 @@ async function submitForm() {
 
 <template>
   <section class="login-page">
-    <template v-if="currentUser">
+    <p v-if="errorMessage || authError" class="error-message" role="alert">
+      {{ errorMessage || authError }}
+    </p>
+    <template v-if="currentUser && !busy">
       <h1>Your account</h1>
       <p>
         Signed in as <strong>{{ currentUser.username }}</strong
@@ -93,8 +87,6 @@ async function submitForm() {
           Register
         </button>
       </div>
-      <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
-      <p v-if="successMessage" class="success-message" role="status">{{ successMessage }}</p>
       <form class="form-fields" @submit.prevent="submitForm" :aria-busy="busy">
         <fieldset :disabled="busy">
           <template v-if="isRegister">

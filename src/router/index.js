@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { refreshSession } from '../services/authService'
+import { authReady, refreshSession } from '../services/authService'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -65,7 +65,8 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  await authReady
   const user = refreshSession()
   if (to.meta.requiresAuth && !user) {
     return { name: 'login', query: { redirect: to.path } }

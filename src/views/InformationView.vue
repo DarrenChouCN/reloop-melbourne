@@ -23,10 +23,10 @@ const pages = {
   privacy: {
     title: 'Privacy',
     paragraphs: [
-      'This local demonstration stores account details, password hashes, service reviews and workshop bookings in this browser. Your login session is stored in the current tab and expires after eight hours.',
-      'Anyone using the same browser profile may be able to inspect local data. Use test details rather than sensitive personal information. Clearing site data removes local accounts, reviews and bookings; the demo accounts and reviews are recreated when next needed.',
+      'Firebase Authentication manages your account, display name and sign-in credentials. Firebase stores the login session in this browser tab; refreshing keeps you signed in, while closing the tab ends the session. Reviews and workshop bookings are still stored locally during this stage.',
+      'Anyone using the same browser profile may be able to inspect local reviews and bookings. Use test details. Clearing site data removes local data and signs you out, but does not delete your Firebase account. Demo reviews are recreated when next needed. Older local accounts are no longer used.',
       'Email text and attachments are held in page memory for preview only. They are not sent or saved to browser storage. Leaving or reloading the page clears them. CSV and PDF exports remain in your downloads until you delete them.',
-      'This notice describes the local version. It must be updated when cloud storage, maps and real email delivery are enabled.',
+      'This notice describes the Authentication integration stage. It must be updated when cloud data storage, maps and real email delivery are enabled.',
     ],
   },
 }

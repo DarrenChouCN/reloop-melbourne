@@ -9,7 +9,7 @@ const logoutError = ref('')
 async function signOut() {
   logoutError.value = ''
   try {
-    logout()
+    await logout()
     await router.replace('/login')
   } catch (error) {
     logoutError.value = error.message

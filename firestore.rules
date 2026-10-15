@@ -4,9 +4,14 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function admin() { return signedIn() && request.auth.token.get('admin', false) == true; }
 
-    match /services/{serviceId} {
-      allow read: if true;
-      // Catalog data is maintained by the trusted seed script.
+    // This coursework catalog is static: keep these IDs in sync with services.json.
+    function knownService(id) {
+      return id in [
+        'box-hill-repair-cafe', 'eastern-recycling-centre', 'community-fix-hub',
+        'demo-camberwell-repair', 'demo-doncaster-recycling', 'demo-richmond-repair',
+        'demo-hawthorn-repair', 'demo-glen-waverley-recycling', 'demo-ringwood-repair',
+        'demo-balwyn-repair', 'demo-blackburn-recycling', 'demo-vermont-repair'
+      ];
     }
 
     match /reviews/{reviewId} {
@@ -16,7 +21,7 @@ service cloud.firestore {
           && r.keys().hasOnly(['serviceId', 'userId', 'username', 'rating', 'comment', 'hasUsedService', 'createdAt', 'updatedAt'])
           && r.userId == request.auth.uid
           && reviewId == r.serviceId + '_' + request.auth.uid
-          && exists(/databases/$(database)/documents/services/$(r.serviceId))
+          && knownService(r.serviceId)
           && r.username is string && r.username.size() > 0 && r.username.size() <= 254
           && r.rating is int && r.rating >= 1 && r.rating <= 5
           && r.comment is string && r.comment.size() <= 500

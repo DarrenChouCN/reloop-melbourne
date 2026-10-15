@@ -1,7 +1,13 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { authError, currentUser, login, register } from '../services/authService'
+import {
+  authError,
+  currentUser,
+  login,
+  register,
+  refreshAdminAccess,
+} from '../services/authService'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,6 +16,20 @@ const busy = ref(false)
 const errorMessage = ref('')
 const passwordError = ref('')
 const form = reactive({ username: '', email: '', password: '', confirmPassword: '' })
+
+async function refreshAccess() {
+  if (busy.value) return
+  busy.value = true
+  errorMessage.value = ''
+  try {
+    await refreshAdminAccess()
+    await router.replace('/admin')
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    busy.value = false
+  }
+}
 
 function changeMode(registerMode) {
   isRegister.value = registerMode
@@ -53,7 +73,7 @@ async function submitForm() {
     <p v-if="errorMessage || authError" class="error-message" role="alert">
       {{ errorMessage || authError }}
     </p>
-    <template v-if="currentUser && !busy">
+    <template v-if="currentUser">
       <h1>Your account</h1>
       <p>
         Signed in as <strong>{{ currentUser.username }}</strong
@@ -61,6 +81,10 @@ async function submitForm() {
       </p>
       <p>{{ currentUser.email }}</p>
       <RouterLink to="/services">Browse repair services</RouterLink>
+      <p>If you have been assigned administrator access, refresh your permissions here.</p>
+      <button class="button secondary-button" type="button" :disabled="busy" @click="refreshAccess">
+        {{ busy ? 'Please wait…' : 'Refresh administrator access' }}
+      </button>
     </template>
     <template v-else>
       <h1>{{ isRegister ? 'Create an account' : 'Log in' }}</h1>

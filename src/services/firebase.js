@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -27,4 +28,23 @@ try {
 export function getDatabase() {
   if (!db) throw new Error(firebaseError)
   return db
+}
+
+export async function callCloud(name, data = {}) {
+  if (!auth) throw new Error(firebaseError)
+  try {
+    const functions = getFunctions(auth.app, 'australia-southeast2')
+    return (await httpsCallable(functions, name, { timeout: 60000 })(data)).data
+  } catch (error) {
+    const messages = {
+      'functions/not-found':
+        'Cloud Functions are not deployed yet. Complete the email setup first.',
+      'functions/internal':
+        'The server result could not be confirmed. Check the result again before creating another email.',
+      'functions/unavailable': 'Cannot reach the server. Check your connection and try again.',
+      'functions/deadline-exceeded':
+        'The request timed out. Check the result again before creating another email.',
+    }
+    throw new Error(messages[error.code] || error.message, { cause: error })
+  }
 }

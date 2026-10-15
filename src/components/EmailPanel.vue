@@ -3,7 +3,12 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import workshop from '../data/workshop.json'
 import { formatSessionDate } from '../services/bookingService'
 import { refreshSession } from '../services/authService'
-import { getRecipients, prepareEmail, validateAttachments } from '../services/mailService'
+import {
+  getRecipients,
+  prepareEmail,
+  sendEmail,
+  validateAttachments,
+} from '../services/mailService'
 
 const props = defineProps({
   bookings: { type: Array, default: () => [] },
@@ -21,6 +26,8 @@ const fileInput = ref(null)
 const preview = ref(null)
 const previewHeading = ref(null)
 const busy = ref(false)
+const attempted = ref(false)
+const sendResult = ref(null)
 const errorMessage = ref('')
 const attachmentError = ref('')
 const recipients = computed(() => {
@@ -33,9 +40,11 @@ const recipients = computed(() => {
 })
 
 watch(
-  [form, files, () => props.bookings, () => props.bookingsUnavailable],
+  [form, files],
   () => {
     preview.value = null
+    attempted.value = false
+    sendResult.value = null
     errorMessage.value = ''
   },
   { deep: true },
@@ -75,11 +84,32 @@ async function previewEmail() {
   busy.value = true
   errorMessage.value = ''
   preview.value = null
+  attempted.value = false
+  sendResult.value = null
   try {
     refreshSession()
     preview.value = await prepareEmail({ ...form }, files.value)
     await nextTick()
     previewHeading.value?.focus()
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    busy.value = false
+  }
+}
+
+async function deliverEmail() {
+  if (busy.value || !preview.value) return
+  if (
+    !attempted.value &&
+    !window.confirm(`Send this email to ${preview.value.recipients.length} recipients now?`)
+  )
+    return
+  busy.value = true
+  attempted.value = true
+  errorMessage.value = ''
+  try {
+    sendResult.value = await sendEmail(preview.value)
   } catch (error) {
     errorMessage.value = error.message
   } finally {
@@ -92,8 +122,8 @@ async function previewEmail() {
   <section class="email-panel" aria-labelledby="email-heading">
     <h2 id="email-heading">Email &amp; Bulk Email</h2>
     <p id="email-mode" class="muted">
-      Local preview only. No email is sent. The message and attachments are kept only on this page
-      and cleared when you leave or reload it.
+      Preview your message before sending. Each recipient receives a separate email and cannot see
+      the other addresses. Drafts and attachments are cleared when you leave or reload this page.
     </p>
     <form
       class="form-fields"
@@ -193,11 +223,13 @@ async function previewEmail() {
         </p>
       </fieldset>
     </form>
-    <p v-if="busy" role="status">Reading attachments and preparing preview…</p>
+    <p v-if="busy" role="status">
+      {{ attempted ? 'Sending or checking the result…' : 'Preparing preview…' }}
+    </p>
     <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
     <section v-if="preview" class="email-preview" aria-labelledby="email-preview-heading">
       <h3 id="email-preview-heading" ref="previewHeading" tabindex="-1">
-        Email preview — not sent
+        {{ attempted ? 'Email request' : 'Email preview — not sent' }}
       </h3>
       <p>{{ preview.recipients.length }} recipients</p>
       <ul>
@@ -211,7 +243,25 @@ async function previewEmail() {
           {{ file.filename }} ({{ Math.ceil(file.size / 1024) }} KB)
         </li>
       </ul>
-      <p class="muted">Sending will be available after the email service is connected.</p>
+      <p
+        v-if="sendResult"
+        :class="sendResult.status === 'accepted' ? 'success-message' : 'error-message'"
+        role="status"
+      >
+        {{ sendResult.count }} recipients: {{ sendResult.message }}
+      </p>
+      <p v-if="attempted" class="muted">
+        Reference: {{ preview.requestId }}. Checking this request will not send it twice.
+      </p>
+      <button
+        v-if="!sendResult || sendResult.status === 'pending'"
+        class="button"
+        type="button"
+        :disabled="busy"
+        @click="deliverEmail"
+      >
+        {{ attempted ? 'Check send result' : 'Send email now' }}
+      </button>
     </section>
   </section>
 </template>

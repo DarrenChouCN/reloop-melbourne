@@ -1,5 +1,6 @@
 import { getCurrentUser } from './authService'
 import { getBookings } from './bookingService'
+import { callCloud } from './firebase'
 import workshop from '../data/workshop.json'
 
 const maxAttachmentBytes = 5 * 1024 * 1024
@@ -48,6 +49,14 @@ export function validateAttachments(files) {
   if (files.length > 3) throw new Error('Please choose no more than 3 attachments.')
   let total = 0
   for (const file of files) {
+    if (
+      file.name.length > 120 ||
+      /[/\\]/.test(file.name) ||
+      Array.from(file.name).some((character) => character.charCodeAt(0) < 32)
+    )
+      throw new Error(
+        'Use attachment filenames of 120 characters or less, without control characters.',
+      )
     const extension = file.name.split('.').pop().toLowerCase()
     if (!Object.hasOwn(attachmentTypes, extension))
       throw new Error('Attachments must be PDF, CSV, TXT, PNG or JPG files.')
@@ -73,8 +82,7 @@ function readAttachment(file) {
   })
 }
 
-// Local preparation only. The future mail function must check roles, recipients
-// and attachments again on the server, and deliver separately to each recipient.
+// Preview locally first; the cloud function validates everything again before sending.
 export async function prepareEmail(form, files = []) {
   if (getCurrentUser()?.role !== 'admin') throw new Error('Please log in as an administrator.')
   const recipients = getRecipients(
@@ -93,5 +101,18 @@ export async function prepareEmail(form, files = []) {
   for (const file of files) attachments.push(await readAttachment(file))
   if (getCurrentUser()?.role !== 'admin')
     throw new Error('Your administrator session has expired. Please log in again.')
-  return { recipients, subject, message, attachments }
+  return {
+    requestId: crypto.randomUUID(),
+    recipientMode: form.recipientMode,
+    sessionDate: form.recipientMode === 'session' ? form.sessionDate : '',
+    recipients,
+    subject,
+    message,
+    attachments,
+  }
+}
+
+export async function sendEmail(preview) {
+  if (getCurrentUser()?.role !== 'admin') throw new Error('Please log in as an administrator.')
+  return callCloud('sendEmail', preview)
 }

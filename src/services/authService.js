@@ -9,7 +9,7 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth'
-import { auth, firebaseError } from './firebase'
+import { auth, callCloud, firebaseError } from './firebase'
 
 const userState = ref(null)
 export const currentUser = readonly(userState)
@@ -85,7 +85,7 @@ export function getCurrentUser() {
   return auth?.currentUser?.uid === userState.value?.id ? userState.value : null
 }
 
-// Kept synchronous for the local review, booking and email services.
+// Page actions read the cached Firebase account synchronously.
 export function refreshSession() {
   userState.value = getCurrentUser()
   return userState.value
@@ -94,6 +94,16 @@ export function refreshSession() {
 async function requireAuth() {
   await authReady
   if (!auth || !ready) throw new Error(authError.value || 'Firebase Authentication is unavailable.')
+}
+
+export async function refreshAdminAccess() {
+  await requireAuth()
+  const user = auth.currentUser
+  if (!user) throw new Error('Please log in first.')
+  await callCloud('refreshAdminAccess')
+  if (auth.currentUser !== user) throw new Error('Your account changed. Please try again.')
+  await user.getIdToken(true)
+  await updateUser(user)
 }
 
 export async function register({ username, email, password, confirmPassword }) {

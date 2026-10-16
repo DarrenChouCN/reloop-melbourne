@@ -15,6 +15,7 @@
   "dependencies": {
     "firebase": "13.0.0",
     "jspdf": "4.2.1",
+    "mapbox-gl": "3.33.0",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
   },

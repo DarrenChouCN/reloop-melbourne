@@ -9,7 +9,7 @@ const pages = {
     paragraphs: [
       'ReLoop Melbourne is a student project that helps people explore repair and recycling options, read reuse guidance and try workshop bookings.',
       'Service listings, reviews and workshop sessions are demonstration data. Check details with a real provider before visiting. Demo bookings do not reserve a place at a real event.',
-      'A public contact address is not available in this local version. For coursework feedback, contact the student through the course submission channel.',
+      'For coursework feedback, contact the student through the course submission channel.',
     ],
   },
   accessibility: {
@@ -26,7 +26,8 @@ const pages = {
       'Firebase Authentication manages your account, display name and sign-in credentials. Firebase stores the login session in this browser tab; refreshing keeps you signed in, while closing the tab ends the session. Firestore stores your reviews and workshop bookings. Reviews and display names are public; booking contact details are accessible to the account owner and administrators.',
       'Use test details for this coursework demonstration. Clearing browser data signs you out but does not delete your Firebase account, cloud reviews or bookings. Older local accounts, reviews and bookings are no longer read or automatically uploaded.',
       'Administrators can send emails and attachments through Firebase Cloud Functions and SendGrid. Workshop emails use contact addresses from confirmed bookings. Recipients receive separate messages. Drafts remain in page memory until sent or cleared; leaving or reloading the page clears the draft. SendGrid processes sent content and recipient addresses for delivery.',
-      'Firestore keeps email request identifiers, administrator IDs, recipient counts, content hashes, timestamps and provider acceptance results to prevent duplicate sends. It does not store email bodies or attachment files. CSV and PDF exports remain in your downloads until you delete them. Map integration is not enabled yet.',
+      'Firestore keeps email request identifiers, administrator IDs, recipient counts, content hashes, timestamps and provider acceptance results to prevent duplicate sends. It does not store email bodies or attachment files. CSV and PDF exports remain in your downloads until you delete them.',
+      'Mapbox provides the map, address search and route planning. Search text and journey coordinates are sent to Mapbox. Your browser asks permission before sharing your location; this app keeps it only in page memory. Service markers are demonstration points, not verified provider addresses.',
     ],
   },
 }

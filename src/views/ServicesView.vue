@@ -5,6 +5,7 @@ import services from '../data/services.json'
 import { getRatingSummary, getReviews, saveReview } from '../services/reviewService'
 import { currentUser, refreshSession } from '../services/authService'
 import { downloadCsv, downloadPdf } from '../services/exportService'
+import ServiceMap from '../components/ServiceMap.vue'
 
 const selectedServiceId = ref(null)
 const reviews = ref([])
@@ -191,6 +192,10 @@ const selectedReviews = computed(() => {
     .sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt))
 })
 
+function selectMapService(serviceId) {
+  if (!reviewsLoading.value) selectedServiceId.value = serviceId
+}
+
 function selectService(serviceId) {
   // Select another service, or collapse the reviews for the current service.
   selectedServiceId.value = selectedServiceId.value === serviceId ? null : serviceId
@@ -269,10 +274,10 @@ function formatDate(date) {
         </label>
         <button class="button" type="submit">Search</button>
         <button class="button secondary-button" type="button" @click="resetSearch">Reset</button>
-        <button class="button secondary-button" type="button" disabled>Use My Location</button>
       </form>
       <p class="muted">
-        Search by item, service name, suburb or postcode. Location detection is not available yet.
+        Search by item, service name, suburb or postcode. Use the Service Map to find a starting
+        location and plan a route.
       </p>
     </section>
 
@@ -507,7 +512,11 @@ function formatDate(date) {
 
       <aside class="map-section" aria-labelledby="map-heading">
         <h2 id="map-heading">Service Map</h2>
-        <div class="map-placeholder">Map coming soon</div>
+        <ServiceMap
+          :services="tableResults"
+          :selected-id="selectedServiceId"
+          @select-service="selectMapService"
+        />
       </aside>
     </div>
   </div>
@@ -538,19 +547,9 @@ function formatDate(date) {
   gap: 28px;
 }
 
-.directory-column {
+.directory-column,
+.map-section {
   min-width: 0;
-}
-
-.map-placeholder {
-  min-height: 320px;
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #ddd;
-  background: #e4e4e4;
-  color: #666;
 }
 
 .search-fields {
@@ -637,10 +636,6 @@ h3 {
   .services-layout {
     grid-template-columns: 1fr;
     gap: 0;
-  }
-
-  .map-placeholder {
-    min-height: 220px;
   }
 }
 

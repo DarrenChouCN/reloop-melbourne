@@ -6,7 +6,8 @@
     "suburb": "Box Hill",
     "postcode": "3128",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Get help with common household repairs from community volunteers."
+    "description": "Get help with common household repairs from community volunteers.",
+    "coordinates": [145.1229, -37.819]
   },
   {
     "id": "eastern-recycling-centre",
@@ -23,7 +24,8 @@
       "Batteries",
       "Glass Bottles and Jars"
     ],
-    "description": "Find recycling options for unwanted household items."
+    "description": "Find recycling options for unwanted household items.",
+    "coordinates": [145.175, -37.8207]
   },
   {
     "id": "community-fix-hub",
@@ -32,7 +34,8 @@
     "suburb": "Burwood",
     "postcode": "3125",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Learn how to repair everyday items with help from local volunteers."
+    "description": "Learn how to repair everyday items with help from local volunteers.",
+    "coordinates": [145.112, -37.85]
   },
   {
     "id": "demo-camberwell-repair",
@@ -41,7 +44,8 @@
     "suburb": "Camberwell",
     "postcode": "3124",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.069, -37.831]
   },
   {
     "id": "demo-doncaster-recycling",
@@ -50,7 +54,8 @@
     "suburb": "Doncaster",
     "postcode": "3108",
     "items": ["Batteries", "Glass Bottles and Jars"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.125, -37.787]
   },
   {
     "id": "demo-richmond-repair",
@@ -59,7 +64,8 @@
     "suburb": "Richmond",
     "postcode": "3121",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.001, -37.82]
   },
   {
     "id": "demo-hawthorn-repair",
@@ -68,7 +74,8 @@
     "suburb": "Hawthorn",
     "postcode": "3122",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.034, -37.822]
   },
   {
     "id": "demo-glen-waverley-recycling",
@@ -77,7 +84,8 @@
     "suburb": "Glen Waverley",
     "postcode": "3150",
     "items": ["Batteries", "Glass Bottles and Jars"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.165, -37.88]
   },
   {
     "id": "demo-ringwood-repair",
@@ -86,7 +94,8 @@
     "suburb": "Ringwood",
     "postcode": "3134",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.23, -37.815]
   },
   {
     "id": "demo-balwyn-repair",
@@ -95,7 +104,8 @@
     "suburb": "Balwyn",
     "postcode": "3103",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.083, -37.81]
   },
   {
     "id": "demo-blackburn-recycling",
@@ -104,7 +114,8 @@
     "suburb": "Blackburn",
     "postcode": "3130",
     "items": ["Batteries", "Glass Bottles and Jars"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.153, -37.819]
   },
   {
     "id": "demo-vermont-repair",
@@ -113,6 +124,7 @@
     "suburb": "Vermont",
     "postcode": "3133",
     "items": ["Toaster", "Desk Lamp", "Electric Kettle", "Clothing", "Chair"],
-    "description": "Fictional service for testing the directory. This is not a real provider."
+    "description": "Fictional service for testing the directory. This is not a real provider.",
+    "coordinates": [145.195, -37.837]
   }
 ]

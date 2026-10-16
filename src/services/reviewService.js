@@ -34,6 +34,7 @@ export async function saveReview(serviceId, { rating, comment, hasUsedService })
   if (hasUsedService !== true) throw new Error('Please confirm that you have used this service.')
 
   const db = getDatabase()
+  // Keep one review per user and service; later submissions update it.
   const reference = doc(db, 'reviews', `${serviceId}_${user.id}`)
   await runTransaction(db, async (transaction) => {
     const existing = await transaction.get(reference)

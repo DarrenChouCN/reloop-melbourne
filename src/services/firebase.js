@@ -33,6 +33,7 @@ export function getDatabase() {
 export async function callCloud(name, data = {}) {
   if (!auth) throw new Error(firebaseError)
   try {
+    // Use the same region as the deployed Cloud Functions.
     const functions = getFunctions(auth.app, 'australia-southeast2')
     return (await httpsCallable(functions, name, { timeout: 60000 })(data)).data
   } catch (error) {

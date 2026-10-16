@@ -6,6 +6,7 @@ import AppFooter from './components/AppFooter.vue'
 
 const route = useRoute()
 const mainContent = ref(null)
+// Move keyboard focus to the new page after navigation.
 watch(
   () => route.path,
   async () => {
@@ -21,7 +22,6 @@ watch(
     <AppHeader />
 
     <main id="main-content" ref="mainContent" class="main-content" tabindex="-1">
-      <!-- Display the page component that matches the current route. -->
       <RouterView />
     </main>
 

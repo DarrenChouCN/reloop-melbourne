@@ -410,9 +410,6 @@ async function removeReview(review) {
 </template>
 
 <style scoped>
-.admin-page {
-  line-height: 1.5;
-}
 .comment {
   min-width: 180px;
   max-width: 360px;

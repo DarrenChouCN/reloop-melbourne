@@ -1,6 +1,7 @@
 export function csvText(columns, rows) {
   function cell(value) {
     let text = String(value ?? '')
+    // Keep user text from being treated as a spreadsheet formula.
     if (typeof value === 'string' && /^\s*[=+\-@]/.test(text)) text = `'${text}`
     return `"${text.replaceAll('"', '""')}"`
   }
@@ -63,6 +64,7 @@ export async function createPdf(title, columns, rows, fontBytes) {
       heading()
     }
     let offset = 0
+    // Split long comments across pages without cutting off their text.
     while (offset < count) {
       if (y >= 184) {
         doc.addPage()

@@ -132,6 +132,7 @@ function hasWorkshop(day) {
   return sessions.value.find((session) => session.date === dateFor(day))
 }
 function availableDay(day) {
+  // Enable only future sessions that still have places.
   const session = hasWorkshop(day)
   return (
     !loading.value && !loadError.value && isSessionOpen(session) && getRemainingPlaces(session) > 0
@@ -203,7 +204,6 @@ async function removeBooking(booking) {
 
     <div class="workshop-layout">
       <section class="workshop-details">
-        <!-- Switch between the workshop details and the unavailable state. -->
         <template v-if="selectedSession">
           <div class="workshop-image" aria-hidden="true">
             <svg class="illustration" viewBox="0 0 64 64" focusable="false">

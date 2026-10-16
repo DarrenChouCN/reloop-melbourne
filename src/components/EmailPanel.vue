@@ -39,6 +39,7 @@ const recipients = computed(() => {
   }
 })
 
+// Editing the message or attachments requires a new preview before sending.
 watch(
   [form, files],
   () => {

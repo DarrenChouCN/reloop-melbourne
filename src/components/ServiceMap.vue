@@ -26,6 +26,7 @@ let requestId = 0
 const emptyRoute = { type: 'FeatureCollection', features: [] }
 
 function cancelRequest() {
+  // Ignore late responses as well as stopping any active fetch.
   requestId++
   controller?.abort()
   busy.value = ''
@@ -106,6 +107,7 @@ onUnmounted(() => {
   map = null
 })
 
+// Keep map markers and destinations in sync with the directory filters.
 watch(
   () => props.services.map((service) => service.id).join(','),
   () => {

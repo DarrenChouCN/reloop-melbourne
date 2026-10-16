@@ -70,7 +70,9 @@ export async function createBooking(sessionDate, form) {
   if (form.agreedToTerms !== true) throw new Error('Please agree to the booking terms.')
   const db = getDatabase()
   const sessionRef = doc(db, 'sessions', sessionDate)
+  // Reuse one document per user and session to prevent duplicate bookings.
   const bookingRef = doc(db, 'bookings', `${sessionDate}_${user.id}`)
+  // Save the booking and seat count together, even when users book at once.
   await runTransaction(db, async (transaction) => {
     const sessionDoc = await transaction.get(sessionRef)
     const existing = await transaction.get(bookingRef)
@@ -110,6 +112,7 @@ export async function cancelBooking(id) {
   if (!user) throw new Error('Please log in to cancel a booking.')
   const db = getDatabase()
   const bookingRef = doc(db, 'bookings', id)
+  // Release the places in the same transaction as the cancellation.
   await runTransaction(db, async (transaction) => {
     const existing = await transaction.get(bookingRef)
     if (!existing.exists())

@@ -27,6 +27,7 @@ export async function searchPlaces(text, signal) {
   const q = text.trim()
   if (q.length < 2 || q.length > 100 || q.includes(';') || q.split(/\s+/).length > 20)
     throw new Error('Enter a short address, suburb or postcode in Melbourne.')
+  // Search only when submitted; keep temporary results in memory.
   const data = await request(
     'search/geocode/v6/forward',
     {
@@ -57,6 +58,7 @@ export async function getRoute(start, end, mode, signal) {
     !['driving', 'walking', 'cycling'].includes(mode)
   )
     throw new Error('Choose a starting point and destination in Melbourne.')
+  // Mapbox coordinates are longitude first, then latitude.
   const data = await request(
     `directions/v5/mapbox/${mode}/${start.join(',')};${end.join(',')}`,
     {

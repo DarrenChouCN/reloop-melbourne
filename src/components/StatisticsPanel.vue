@@ -20,6 +20,7 @@ const upcomingPlaces = computed(() =>
     .reduce((sum, booking) => sum + booking.numberOfPlaces, 0),
 )
 const averageRating = computed(() => getRatingSummary(props.reviews).average ?? 'No ratings')
+// Group confirmed bookings by session for the selected chart measure.
 const chartRows = computed(() =>
   workshop.sessions
     .filter((session) => period.value === 'all' || session.date > todayDate())

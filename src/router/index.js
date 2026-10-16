@@ -40,7 +40,6 @@ const router = createRouter({
       meta: { title: 'Access Denied' },
       component: () => import('../views/ForbiddenView.vue'),
     },
-    // Load the workshop booking page when this URL is selected.
     {
       path: '/workshops/basic-repair',
       name: 'basic-repair',
@@ -65,6 +64,7 @@ const router = createRouter({
   ],
 })
 
+// Wait for Firebase before checking protected pages.
 router.beforeEach(async (to) => {
   await authReady
   const user = refreshSession()

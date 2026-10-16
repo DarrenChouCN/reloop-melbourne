@@ -119,6 +119,7 @@ export const sendEmail = onCall({ secrets: [apiKey] }, async (request) => {
       'Enter a subject of 1–150 characters and a message of 1–5000 characters.',
     )
   const payload = {
+    // Send separately so recipients cannot see each other's email addresses.
     personalizations: recipients.map((email) => ({ to: [{ email }] })),
     from: { email: sender.value(), name: 'ReLoop Melbourne' },
     subject,
@@ -160,6 +161,7 @@ export const sendEmail = onCall({ secrets: [apiKey] }, async (request) => {
       )
   }
   const rateRef = db.doc(`emailRateLimits/${request.auth.uid}`)
+  // Reserve the request and rate limit together before contacting SendGrid.
   const existing = await db.runTransaction(async (transaction) => {
     const saved = previous(await transaction.get(reference))
     if (saved) return saved

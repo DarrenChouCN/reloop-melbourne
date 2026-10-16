@@ -117,6 +117,7 @@ function getColumnValue(service, key) {
   return service[key]
 }
 
+// Apply column filters and sorting before taking the current page.
 const tableResults = computed(() => {
   const results = serviceDirectory.value.filter((service) =>
     columns.every((column) => {
@@ -143,6 +144,7 @@ const pageServices = computed(() => {
 async function exportTable(format) {
   exportError.value = ''
   exportMessage.value = ''
+  // Export all filtered results, not just the visible page.
   const rows = tableResults.value.map((service) => ({
     name: service.name,
     type: service.type,

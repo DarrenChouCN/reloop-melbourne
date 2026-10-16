@@ -40,6 +40,7 @@ function errorMessage(error) {
 }
 
 async function updateUser(user) {
+  // Read the admin role from Firebase claims, not browser storage.
   const token = user ? await getIdTokenResult(user) : null
   // Ignore an older callback if the account changed while its token was loading.
   if (auth.currentUser !== user) return
@@ -102,6 +103,7 @@ export async function refreshAdminAccess() {
   if (!user) throw new Error('Please log in first.')
   await callCloud('refreshAdminAccess')
   if (auth.currentUser !== user) throw new Error('Your account changed. Please try again.')
+  // Fetch a new token after the server updates this user's permissions.
   await user.getIdToken(true)
   await updateUser(user)
 }

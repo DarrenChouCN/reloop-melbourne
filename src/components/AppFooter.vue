@@ -22,8 +22,8 @@ const footerLinks = [
 .site-footer {
   width: 100%;
   padding: 24px 20px;
-  border-top: 1px solid #e2e2e2;
-  background-color: #ffffff;
+  border-top: 1px solid var(--border);
+  background: var(--tint);
 }
 
 .footer-navigation {
@@ -34,13 +34,13 @@ const footerLinks = [
 }
 
 .footer-link {
-  color: #666666;
+  color: var(--brand);
   font-size: 17px;
   text-decoration: none;
 }
 
 .footer-link:hover {
-  color: #444444;
+  color: var(--brand-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

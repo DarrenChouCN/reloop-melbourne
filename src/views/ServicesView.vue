@@ -523,10 +523,6 @@ function formatDate(date) {
 </template>
 
 <style scoped>
-.services-page {
-  line-height: 1.5;
-}
-
 .search-section,
 .directory-section {
   padding-bottom: 24px;
@@ -590,18 +586,18 @@ h3 {
 }
 
 .selected-row {
-  background: #f5f5f5;
+  background: var(--tint);
 }
 
 .view-button {
   border: 0;
   background: transparent;
-  color: #0969b5;
+  color: var(--brand);
   text-decoration: underline;
 }
 
 .view-button:hover {
-  background: #e8e8e8;
+  background: var(--tint);
 }
 
 .rating-summary {

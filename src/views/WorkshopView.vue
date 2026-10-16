@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import workshop from '../data/workshop.json'
+import icons from '../assets/reuse-icons.svg?no-inline'
 import BookingTable from '../components/BookingTable.vue'
 import { currentUser, refreshSession } from '../services/authService'
 import {
@@ -204,7 +205,11 @@ async function removeBooking(booking) {
       <section class="workshop-details">
         <!-- Switch between the workshop details and the unavailable state. -->
         <template v-if="selectedSession">
-          <div class="workshop-image">Workshop Image</div>
+          <div class="workshop-image" aria-hidden="true">
+            <svg class="illustration" viewBox="0 0 64 64" focusable="false">
+              <use :href="`${icons}#workshop`" />
+            </svg>
+          </div>
 
           <div class="session-information">
             <div>
@@ -434,9 +439,12 @@ async function removeBooking(booking) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e4e4e4;
-  color: #555555;
-  font-size: 21px;
+  background: var(--tint);
+  border-radius: 12px;
+}
+.workshop-image .illustration {
+  width: 160px;
+  height: 160px;
 }
 
 .session-information {
@@ -466,7 +474,6 @@ async function removeBooking(booking) {
 .description p,
 .description ul {
   font-size: 18px;
-  line-height: 1.5;
 }
 
 .description p {
@@ -493,7 +500,8 @@ async function removeBooking(booking) {
 
 .calendar {
   padding: 16px 18px 18px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 
 .calendar h3 {
@@ -528,11 +536,11 @@ async function removeBooking(booking) {
 }
 
 .calendar-day:hover {
-  background: #eee;
+  background: var(--tint);
 }
 
 .calendar-day.selected {
-  background: #111;
+  background: var(--brand);
   color: white;
 }
 

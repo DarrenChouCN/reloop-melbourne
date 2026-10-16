@@ -61,7 +61,8 @@ const navigationItems = [
 
 <style scoped>
 .site-header {
-  border-bottom: 1px solid #e2e2e2;
+  border-top: 3px solid var(--brand);
+  border-bottom: 1px solid var(--border);
   background-color: #ffffff;
 }
 
@@ -79,7 +80,7 @@ const navigationItems = [
 }
 
 .brand {
-  color: #222222;
+  color: var(--brand);
   font-size: 21px;
   font-weight: 600;
   text-decoration: none;
@@ -104,7 +105,7 @@ const navigationItems = [
 }
 
 .navigation-link {
-  padding: 4px 0;
+  padding: 8px 0;
   color: #222222;
   font-size: 18px;
   text-decoration: none;
@@ -112,12 +113,13 @@ const navigationItems = [
 }
 
 .navigation-link:hover {
-  color: #555555;
+  color: var(--brand);
 }
 
 .navigation-link.active-link {
+  color: var(--brand);
   text-decoration: underline;
-  text-decoration-thickness: 1px;
+  text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }
 

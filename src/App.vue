@@ -38,6 +38,7 @@ body {
   margin: 0;
   color: #222;
   font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
 }
 
 .app {

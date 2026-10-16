@@ -1,21 +1,25 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import icons from '../assets/reuse-icons.svg?no-inline'
 
 const features = [
   {
     title: 'Repair Services',
+    icon: 'repair',
     description: 'Find local repair and recycling options.',
     link: 'View Services',
     path: '/services',
   },
   {
     title: 'Workshops',
+    icon: 'workshop',
     description: 'View and book community workshops.',
     link: 'View Workshops',
     path: '/workshops/basic-repair',
   },
   {
     title: 'Reuse Guide',
+    icon: 'reuse',
     description: 'Learn how to handle common household items.',
     link: 'View Guide',
     path: '/reuse-guide',
@@ -33,6 +37,9 @@ const features = [
 
     <section class="feature-grid" aria-label="Explore ReLoop Melbourne">
       <article v-for="feature in features" :key="feature.path" class="feature-card">
+        <svg class="illustration" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <use :href="`${icons}#${feature.icon}`" />
+        </svg>
         <h2>{{ feature.title }}</h2>
         <p>{{ feature.description }}</p>
         <RouterLink :to="feature.path">{{ feature.link }}</RouterLink>
@@ -53,9 +60,6 @@ const features = [
 </template>
 
 <style scoped>
-.home-page {
-  line-height: 1.5;
-}
 .hero-link {
   display: inline-block;
   margin-top: 24px;
@@ -68,9 +72,17 @@ const features = [
   margin: 32px 0;
 }
 .feature-card {
+  display: flex;
+  flex-direction: column;
   padding: 24px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 12px;
+  background: #fafcfb;
+}
+.feature-card .illustration {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
 }
 h2 {
   margin: 0;
@@ -80,9 +92,12 @@ h2 {
 .feature-card p {
   margin: 20px 0 28px;
 }
+.feature-card a {
+  margin-top: auto;
+}
 .impact-section {
   padding: 28px 0;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 dd {

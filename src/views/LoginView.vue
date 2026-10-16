@@ -187,9 +187,9 @@ async function submitForm() {
   max-width: 480px;
   margin: 36px auto;
   padding: 24px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--brand);
   border-radius: 12px;
-  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 h1 {
@@ -206,8 +206,7 @@ h1 {
   flex: 1;
 }
 .mode-buttons button[aria-pressed='true'] {
-  background: #111;
-  border-color: #111;
+  background: var(--brand);
   color: white;
 }
 label {

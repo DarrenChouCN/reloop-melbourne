@@ -42,3 +42,10 @@ npm run build
 ```sh
 npm run lint
 ```
+
+```bash
+npm run build
+firebase deploy --only hosting --project reloop-melbourne-cf787
+```
+
+# https://reloop-melbourne-cf787.web.app

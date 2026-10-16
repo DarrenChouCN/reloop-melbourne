@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import items from '../data/reuse-guide.json'
+import icons from '../assets/reuse-icons.svg?no-inline'
 
 const categories = [...new Set(items.map((item) => item.category))]
 const searchForm = reactive({ keyword: '', category: 'Small Appliances' })
@@ -80,7 +81,11 @@ function selectCategory(value) {
         </div>
         <p v-if="!results.length" class="muted">No items found. Try another keyword or category.</p>
         <article v-for="item in results" :key="item.id" class="guide-item">
-          <div class="item-image" aria-hidden="true">Item</div>
+          <div class="item-image" aria-hidden="true">
+            <svg class="illustration" viewBox="0 0 64 64" focusable="false">
+              <use :href="`${icons}#${item.id}`" />
+            </svg>
+          </div>
           <div>
             <h3>{{ item.name }}</h3>
             <p>{{ item.description }}</p>
@@ -102,9 +107,6 @@ function selectCategory(value) {
 </template>
 
 <style scoped>
-.guide-page {
-  line-height: 1.5;
-}
 .guide-search {
   display: grid;
   grid-template-columns: 2fr 1fr auto;
@@ -140,7 +142,13 @@ h3 {
   cursor: pointer;
 }
 .category-button[aria-pressed='true'] {
+  background: var(--tint);
+  color: var(--brand);
+  font-weight: bold;
   text-decoration: underline;
+}
+.category-button:hover {
+  background: var(--tint);
 }
 .results-heading,
 .item-actions,
@@ -165,8 +173,12 @@ h3 {
   height: 100px;
   display: grid;
   place-items: center;
-  background: #e4e4e4;
-  color: #666;
+  background: var(--tint);
+  border-radius: 10px;
+}
+.item-image .illustration {
+  width: 70%;
+  height: 70%;
 }
 .guide-item p {
   margin: 8px 0 20px;
@@ -178,8 +190,10 @@ h3 {
 }
 .steps li {
   padding: 4px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 10px;
+  color: var(--brand);
+  background: var(--tint);
 }
 @media (max-width: 767px) {
   .guide-search,

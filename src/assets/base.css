@@ -1,4 +1,16 @@
 /* Shared page and native form styles. Each view keeps its own layout. */
+:root {
+  --brand: #285b45;
+  --brand-hover: #1d4433;
+  --tint: #eef5f0;
+  --border: #d7e2da;
+}
+
+a {
+  color: var(--brand);
+  text-underline-offset: 3px;
+}
+
 .page-container {
   width: calc(100% - 56px);
   max-width: 1200px;
@@ -8,13 +20,14 @@
 
 .page-heading {
   padding-bottom: 24px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
 }
 
 .page-heading h1 {
   margin: 0;
   font-size: 32px;
   font-weight: 500;
+  color: var(--brand);
 }
 
 .page-heading p {
@@ -66,18 +79,35 @@ fieldset.form-fields {
 .button {
   min-height: 44px;
   padding: 10px 16px;
-  border: 1px solid #111;
+  border: 1px solid var(--brand);
   border-radius: 10px;
-  background: #111;
+  background: var(--brand);
   color: white;
   font: inherit;
   cursor: pointer;
+  transition:
+    background-color 0.15s,
+    transform 0.15s;
 }
 
 .secondary-button {
-  border-color: #767676;
+  border-color: var(--brand);
   background: white;
-  color: #222;
+  color: var(--brand);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--brand-hover);
+  color: white;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--tint);
+  color: var(--brand);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .button:disabled {
@@ -105,13 +135,26 @@ fieldset.form-fields {
 .data-table th,
 .data-table td {
   padding: 12px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
 }
 
 .data-table tbody th {
   font-weight: normal;
+}
+
+.data-table thead {
+  background: var(--tint);
+}
+
+.data-table tbody tr:hover {
+  background: #f7faf8;
+}
+
+.illustration {
+  display: block;
+  color: var(--brand);
 }
 
 .table-controls {
@@ -178,4 +221,13 @@ fieldset.form-fields {
 
 .skip-link:focus {
   transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  .button:active:not(:disabled) {
+    transform: none;
+  }
 }

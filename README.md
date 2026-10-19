@@ -25,6 +25,21 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 npm install
 ```
 
+<!-- NameView.vue
+<template>
+  <h1>Darren Chou</h1>
+</template>
+
+src/router/index.js  ->routes
+{
+  path: '/name',
+  meta: { title: 'My Name' },
+  component: () => import('../views/NameView.vue'),
+},
+AppHeader.vue  navigationItems
+{ label: 'My Name', path: '/name' },
+-->
+
 ### Compile and Hot-Reload for Development
 
 ```sh
